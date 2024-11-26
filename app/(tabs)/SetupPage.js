@@ -43,7 +43,7 @@ const SetupPage = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.settingItem}
-          //onPress={() => navigation.navigate('sw')}
+          onPress={() => navigation.navigate("Setup2")}
         >
           {" "}
           <Text style={styles.settingText}>아이디조회/암호설정</Text>
@@ -52,7 +52,7 @@ const SetupPage = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.settingItem}
-          //onPress={() => navigation.navigate('sw')}
+          onPress={() => navigation.navigate("Setup3")}
         >
           {" "}
           <Text style={styles.settingText}>상세 알림 설정</Text>
@@ -61,7 +61,7 @@ const SetupPage = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.settingItem}
-          //onPress={() => navigation.navigate('sw')}
+          onPress={() => navigation.navigate("Setup4")}
         >
           {" "}
           <Text style={styles.settingText}>공지사항</Text>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -9,10 +9,7 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 const NotifPage = ({ navigation }) => {
-  const [showMore, setShowMore] = useState(false);
-
-  // Sample notifications data
-  const notifications = [
+  const notifs = [
     { id: 1, date: "2024-11-20", message: "오늘의 여행이 종료되었습니다." },
     { id: 2, date: "2024-11-20", message: "여행 피드백을 작성해주세요." },
     { id: 3, date: "2024-11-20", message: "여행 일정을 확인하세요." },
@@ -71,15 +68,12 @@ const NotifPage = ({ navigation }) => {
     },
   ];
 
-  const handleShowMore = () => setShowMore(true);
-
-  // Group notifications by date
-  const groupedNotifications = notifications.reduce((acc, notification) => {
-    const date = notification.date;
+  const groupedNotifs = notifs.reduce((acc, notif) => {
+    const date = notif.date;
     if (!acc[date]) {
       acc[date] = [];
     }
-    acc[date].push(notification);
+    acc[date].push(notif);
     return acc;
   }, {});
 
@@ -92,31 +86,17 @@ const NotifPage = ({ navigation }) => {
       <Text style={styles.header}>알림</Text>
 
       <ScrollView style={styles.scrollContainer}>
-        {Object.keys(groupedNotifications).map((date, index) => (
+        {Object.keys(groupedNotifs).map((date, index) => (
           <View key={index} style={styles.dateGroup}>
             <Text style={styles.date}>{date}</Text>
-            {groupedNotifications[date]
-              .slice(0, showMore ? undefined : 3)
-              .map((notification) => (
-                <View key={notification.id} style={styles.notificationItem}>
-                  <Text style={styles.notificationText}>
-                    {notification.message}
-                  </Text>
-                </View>
-              ))}
+            {groupedNotifs[date].map((notif) => (
+              <View key={notif.id} style={styles.notifItem}>
+                <Text style={styles.notifText}>{notif.message}</Text>
+              </View>
+            ))}
           </View>
         ))}
       </ScrollView>
-
-      {/* Show More Button */}
-      {!showMore && notifications.length > 3 && (
-        <TouchableOpacity
-          style={styles.showMoreButton}
-          onPress={handleShowMore}
-        >
-          <Text style={styles.showMoreText}>더 보기</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };
@@ -135,6 +115,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
+    maxHeight: 600,
   },
   dateGroup: {
     marginBottom: 20,
@@ -145,26 +126,15 @@ const styles = StyleSheet.create({
     color: "#555",
     marginBottom: 10,
   },
-  notificationItem: {
+  notifItem: {
     padding: 10,
     backgroundColor: "#f1f1f1",
     borderRadius: 5,
     marginBottom: 8,
   },
-  notificationText: {
+  notifText: {
     fontSize: 14,
     color: "#333",
-  },
-  showMoreButton: {
-    alignItems: "center",
-    paddingVertical: 10,
-    backgroundColor: "#007BFF",
-    borderRadius: 5,
-    marginTop: 10,
-  },
-  showMoreText: {
-    color: "white",
-    fontSize: 16,
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,21 +7,58 @@ import {
   StyleSheet,
   Modal,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Calendar } from "react-native-calendars";
 import { TripsContext } from "./TripsContext";
+import RNPickerSelect from "react-native-picker-select";
 
 export default function PlanningScreen({ navigation }) {
   const { addTrip } = useContext(TripsContext);
 
-  const [destination, setDestination] = useState("");
+  const [destination, setDestination] = useState(""); // 여행지
+  const [countryCode, setCountryCode] = useState("kr"); // 국가 코드
   const [budget, setBudget] = useState("");
   const [memo, setMemo] = useState("");
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [destinations, setDestinations] = useState([]); // 국가 데이터
+  const fetchCountries = async () => {
+    try {
+      const response = await fetch("https://restcountries.com/v3.1/all");
+      const data = await response.json();
 
+      // 국가 데이터를 가공
+      const formattedData = data.map((country) => ({
+        label: country.translations.kor?.common || country.name.common, // 한국어 이름 (없으면 영어 이름)
+        value: {
+          destination: country.translations.kor?.common || country.name.common,
+          countryCode: country.cca2.toLowerCase(), // 국가 코드 (소문자로 변환)
+        },
+      }));
+
+      setDestinations(formattedData);
+      setLoading(false);
+    } catch (error) {
+      console.error("API 호출 에러:", error);
+      Alert.alert("오류", "국가 데이터를 가져오는 데 실패했습니다.");
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchCountries();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
   const handleDayPress = (day) => {
     if (!startDate || (startDate && endDate)) {
       setStartDate(day.dateString);
@@ -46,6 +83,7 @@ export default function PlanningScreen({ navigation }) {
       travelPeriod: `${startDate} ~ ${endDate}`,
       budget,
       memo,
+      countryCode,
     };
 
     addTrip(newTrip);
@@ -64,13 +102,18 @@ export default function PlanningScreen({ navigation }) {
       {/* Form */}
       <View style={styles.formContainer}>
         <Text style={styles.label}>여행지</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="여행지를 입력하세요"
-          placeholderTextColor="gray"
-          value={destination}
-          onChangeText={setDestination}
+        <RNPickerSelect
+          onValueChange={(value) => {
+            if (value) {
+              setDestination(value.destination); // 여행지 설정
+              setCountryCode(value.countryCode); // 국가 코드 설정
+            }
+          }}
+          items={destinations}
+          placeholder={{ label: "여행지를 선택하세요", value: null }}
+          style={pickerStyles}
         />
+
         <Text style={styles.label}>여행기간</Text>
         <TouchableOpacity
           style={[styles.input, styles.inputWithIcon]}
@@ -81,6 +124,7 @@ export default function PlanningScreen({ navigation }) {
           </Text>
           <Ionicons name="calendar-outline" size={24} color="black" />
         </TouchableOpacity>
+
         <Text style={styles.label}>여행예산</Text>
         <TextInput
           style={styles.input}
@@ -90,6 +134,7 @@ export default function PlanningScreen({ navigation }) {
           onChangeText={setBudget}
           keyboardType="numeric"
         />
+
         <Text style={styles.label}>메모</Text>
         <TextInput
           style={[styles.input, styles.memoInput]}
@@ -99,6 +144,7 @@ export default function PlanningScreen({ navigation }) {
           onChangeText={setMemo}
           multiline
         />
+
         <TouchableOpacity style={styles.button} onPress={handleSave}>
           <Text style={styles.buttonText}>계획 만들기</Text>
         </TouchableOpacity>
@@ -134,6 +180,30 @@ export default function PlanningScreen({ navigation }) {
     </View>
   );
 }
+const pickerStyles = {
+  inputIOS: {
+    fontSize: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    color: "black",
+    paddingRight: 30, // 아이콘이나 텍스트 여백
+    marginBottom: 20,
+  },
+  inputAndroid: {
+    fontSize: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    color: "black",
+    paddingRight: 30,
+    marginBottom: 20,
+  },
+};
 
 const styles = StyleSheet.create({
   container: {
