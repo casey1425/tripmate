@@ -6,23 +6,69 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
+  Image,
 } from "react-native";
 
 export default function SearchPage({ navigation }) {
-  const [recentSearches, setRecentSearches] = useState([]); // 초기 검색어 목록
-  const [searchText, setSearchText] = useState(""); // 입력 중인 검색어
+  const [searchText, setSearchText] = useState(""); // 현재 검색어 상태
+  const [searchResults, setSearchResults] = useState([]); // 검색 결과 상태
+  const [favorites, setFavorites] = useState([]); // 즐겨찾기 상태
 
-  // 최근 검색어 렌더링 (테두리 조정)
-  const renderRecentSearch = ({ item }) => (
-    <View style={styles.recentTag}>
-      <Text style={styles.recentText}>{item}</Text>
+  // 임시 검색 결과 데이터
+  const simulatedResults = [
+    "일본1",
+    "일본2",
+    "일본3",
+    "프랑스1",
+    "프랑스2",
+    "미국1",
+    "스페인1",
+    "스페인1",
+    "스페인1",
+    "스페인1",
+  ];
+
+  // 검색어 입력 중 처리
+  const handleSearch = (text) => {
+    setSearchText(text);
+  };
+
+  // 엔터키 입력 후 검색어 처리
+  const handleSubmitSearch = () => {
+    // 검색 결과 필터링
+    setSearchResults(
+      simulatedResults.filter((result) => result.includes(searchText))
+    );
+    setSearchText(""); // 검색어 입력란 비우기
+  };
+
+  // 즐겨찾기 추가 또는 삭제
+  const toggleFavorite = (item) => {
+    setFavorites((prevFavorites) => {
+      if (prevFavorites.includes(item)) {
+        return prevFavorites.filter((fav) => fav !== item);
+      } else {
+        return [...prevFavorites, item];
+      }
+    });
+  };
+
+  // 검색 결과 렌더링
+  const renderSearchResult = ({ item }) => (
+    <View style={styles.searchResult}>
+      <Text style={styles.resultText}>{item}</Text>
       <TouchableOpacity
-        style={styles.deleteButtonContainer}
-        onPress={() =>
-          setRecentSearches(recentSearches.filter((search) => search !== item))
-        }
+        style={styles.favoriteButton}
+        onPress={() => toggleFavorite(item)}
       >
-        <Text style={styles.deleteButton}>X</Text>
+        <Image
+          source={
+            favorites.includes(item)
+              ? require("../../assets/images/filledstar.png") // 즐겨찾기된 상태
+              : require("../../assets/images/star.png") // 즐겨찾기되지 않은 상태
+          }
+          style={styles.favoriteIcon}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -35,31 +81,23 @@ export default function SearchPage({ navigation }) {
           style={styles.searchInput}
           placeholder="국가, 도시 검색"
           value={searchText}
-          onChangeText={setSearchText}
-          onSubmitEditing={() => {
-            if (searchText && !recentSearches.includes(searchText)) {
-              setRecentSearches([searchText, ...recentSearches]);
-              setSearchText("");
-            }
-          }}
+          onChangeText={handleSearch}
+          onSubmitEditing={handleSubmitSearch} // 엔터키로 검색 제출
         />
         <TouchableOpacity onPress={() => setSearchText("")}>
           <Text style={styles.cancelButton}>취소</Text>
         </TouchableOpacity>
       </View>
 
-      {/* 최근 검색어 */}
-      <View style={styles.recentHeader}>
-        <Text style={styles.recentTitle}>최근 검색어</Text>
-      </View>
-      <FlatList
-        data={recentSearches}
-        renderItem={renderRecentSearch}
-        keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={styles.recentList}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      />
+      {/* 검색 결과 */}
+      {searchResults.length > 0 && (
+        <FlatList
+          data={searchResults}
+          renderItem={renderSearchResult}
+          keyExtractor={(item, index) => index.toString()}
+          contentContainerStyle={styles.resultsList}
+        />
+      )}
     </View>
   );
 }
@@ -90,41 +128,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#007bff",
   },
-  recentHeader: {
-    marginVertical: 10,
-  },
-  recentTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  recentList: {
+  searchResult: {
+    padding: 20, // 세로 크기를 3배로 늘림
+    backgroundColor: "#f0f0f0",
+    marginVertical: 5,
+    borderRadius: 5,
     flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  recentTag: {
-    flexDirection: "row",
-    alignItems: "center", // 텍스트와 버튼을 중앙 정렬
-    borderWidth: 1,
-    borderColor: "#dcdcdc",
-    borderRadius: 15, // 둥근 테두리
-    paddingHorizontal: 8, // 양 옆 여백
-    paddingVertical: 4, // 위아래 여백을 줄임
-    marginRight: 10, // 태그 간 간격
-    marginBottom: 10,
-    backgroundColor: "#f9f9f9",
-    height: 30, // 세로 높이 제한
-  },
-  recentText: {
-    fontSize: 14,
-    lineHeight: 20, // 텍스트 높이와 일치
-    marginRight: 5, // 삭제 버튼과 간격
-  },
-  deleteButtonContainer: {
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "space-between",
   },
-  deleteButton: {
-    fontSize: 12,
-    color: "#c0c0c0",
+  resultText: {
+    fontSize: 16,
+    flex: 1, // 텍스트와 버튼을 양쪽에 배치
+  },
+  favoriteButton: {
+    padding: 5,
+  },
+  favoriteIcon: {
+    width: 20,
+    height: 20,
+  },
+  resultsList: {
+    marginTop: 10,
   },
 });
