@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ export default function SearchPage({ navigation }) {
   const [searchText, setSearchText] = useState(""); // 현재 검색어 상태
   const [searchResults, setSearchResults] = useState([]); // 검색 결과 상태
   const [favorites, setFavorites] = useState([]); // 즐겨찾기 상태
+  const [randomizedResults, setRandomizedResults] = useState([]); // 랜덤 데이터
 
   // 임시 검색 결과 데이터
   const simulatedResults = [
@@ -23,19 +24,18 @@ export default function SearchPage({ navigation }) {
     "프랑스2",
     "미국1",
     "스페인1",
-    "스페인1",
-    "스페인1",
-    "스페인1",
+    "스페인2",
+    "스페인3",
+    "스페인4",
   ];
 
-  // 검색어 입력 중 처리
-  const handleSearch = (text) => {
-    setSearchText(text);
-  };
+  // 컴포넌트 로드 시 데이터 랜덤화
+  useEffect(() => {
+    setRandomizedResults(simulatedResults.sort(() => Math.random() - 0.5));
+  }, []);
 
   // 엔터키 입력 후 검색어 처리
   const handleSubmitSearch = () => {
-    // 검색 결과 필터링
     setSearchResults(
       simulatedResults.filter((result) => result.includes(searchText))
     );
@@ -75,24 +75,40 @@ export default function SearchPage({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* 상단 제목 이미지 */}
+      <Image
+        source={require("../../assets/images/Title.png")}
+        style={styles.logo}
+      />
+
+      {/* 우상단 정렬 버튼 */}
+      <TouchableOpacity style={styles.sortButton} onPress={() => {}}>
+        <View style={styles.sortBox} />
+      </TouchableOpacity>
+
       {/* 검색 바 */}
       <View style={styles.searchBar}>
         <TextInput
           style={styles.searchInput}
           placeholder="국가, 도시 검색"
           value={searchText}
-          onChangeText={handleSearch}
+          onChangeText={setSearchText} // 입력 상태를 업데이트만 함
           onSubmitEditing={handleSubmitSearch} // 엔터키로 검색 제출
         />
-        <TouchableOpacity onPress={() => setSearchText("")}>
-          <Text style={styles.cancelButton}>취소</Text>
-        </TouchableOpacity>
       </View>
 
       {/* 검색 결과 */}
-      {searchResults.length > 0 && (
+      {searchResults.length > 0 ? (
         <FlatList
           data={searchResults}
+          renderItem={renderSearchResult}
+          keyExtractor={(item, index) => index.toString()}
+          contentContainerStyle={styles.resultsList}
+        />
+      ) : (
+        // 랜덤 데이터 표시
+        <FlatList
+          data={randomizedResults}
           renderItem={renderSearchResult}
           keyExtractor={(item, index) => index.toString()}
           contentContainerStyle={styles.resultsList}
@@ -107,6 +123,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#ffffff",
     paddingHorizontal: 15,
+  },
+  logo: {
+    width: 150,
+    height: 50,
+    resizeMode: "contain",
+    marginTop: 10,
+    marginLeft: 10,
+  },
+  sortButton: {
+    position: "absolute",
+    right: 10,
+    padding: 10,
+    marginTop: 5,
+  },
+  sortBox: {
+    width: 40,
+    height: 40,
+    backgroundColor: "#000000",
+    borderRadius: 5,
   },
   searchBar: {
     flexDirection: "row",
@@ -124,12 +159,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginRight: 10,
   },
-  cancelButton: {
-    fontSize: 16,
-    color: "#007bff",
-  },
   searchResult: {
-    padding: 20, // 세로 크기를 3배로 늘림
+    padding: 20,
     backgroundColor: "#f0f0f0",
     marginVertical: 5,
     borderRadius: 5,
@@ -139,7 +170,7 @@ const styles = StyleSheet.create({
   },
   resultText: {
     fontSize: 16,
-    flex: 1, // 텍스트와 버튼을 양쪽에 배치
+    flex: 1,
   },
   favoriteButton: {
     padding: 5,

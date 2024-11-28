@@ -5,16 +5,17 @@ import { TripsProvider } from "./(tabs)/TripsContext";
 import { Ionicons } from "@expo/vector-icons";
 
 // 스크린 컴포넌트 가져오기
+import IntroPage from "./(tabs)/IntroPage";
 import HomeScreen from "./(tabs)/HomeScreen";
 import SpendingScreen from "./(tabs)/SpendingScreen";
 import PlanningScreen from "./(tabs)/PlanningScreen";
 import LoginPage from "./(tabs)/LoginPage";
 import SignupPage from "./(tabs)/SignupPage";
-import IntroPage from "./(tabs)/IntroPage";
 import ForgotPassword from "./(tabs)/ForgotPassword";
+import SearchPage from "./(tabs)/SearchPage";
+import FavsPage from "./(tabs)/FavsPage";
 import NotifPage from "./(tabs)/NotifPage";
 import SetupPage from "./(tabs)/SetupPage";
-import SearchPage from "./(tabs)/SearchPage";
 import Setup2 from "./(tabs)/Setup2";
 import Setup3 from "./(tabs)/Setup3";
 import Setup4 from "./(tabs)/Setup4";
@@ -23,11 +24,7 @@ import { Text, View } from "react-native";
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 function PlaceholderPage() {
-  return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>즐겨찾기 페이지가 아직 준비되지 않았습니다.</Text>
-    </View>
-  );
+
 }
 // **탭 네비게이터**
 function TabNavigator() {
@@ -93,7 +90,7 @@ function TabNavigator() {
       />
       <Tab.Screen
         name="Favorites"
-        component={PlaceholderPage}
+        component={FavsPage}
         options={{ title: "즐겨찾기" }}
       />
       <Tab.Screen

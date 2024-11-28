@@ -80,7 +80,7 @@ const NotifPage = ({ navigation }) => {
   return (
     <View style={styles.container}>
 
-      <Text style={styles.header}>알림</Text>
+      <Text style={styles.headerText}>알림</Text>
 
       <ScrollView style={styles.scrollContainer}>
         {Object.keys(groupedNotifs).map((date, index) => (
@@ -104,11 +104,11 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#fff",
   },
-  header: {
-    fontSize: 22,
+  headerText: {
+    fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 20,
     textAlign: "center",
+    marginBottom: 20,
   },
   scrollContainer: {
     flex: 1,
