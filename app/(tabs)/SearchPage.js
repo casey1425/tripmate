@@ -10,12 +10,12 @@ import {
 } from "react-native";
 
 export default function SearchPage({ navigation }) {
-  const [searchText, setSearchText] = useState(""); // 현재 검색어 상태
-  const [searchResults, setSearchResults] = useState([]); // 검색 결과 상태
-  const [favorites, setFavorites] = useState([]); // 즐겨찾기 상태
-  const [randomizedResults, setRandomizedResults] = useState([]); // 랜덤 데이터
+  const [searchText, setSearchText] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [randomizedResults, setRandomizedResults] = useState([]);
 
-  // 임시 검색 결과 데이터
   const simulatedResults = [
     "일본1",
     "일본2",
@@ -29,31 +29,35 @@ export default function SearchPage({ navigation }) {
     "스페인4",
   ];
 
-  // 컴포넌트 로드 시 데이터 랜덤화
   useEffect(() => {
     setRandomizedResults(simulatedResults.sort(() => Math.random() - 0.5));
   }, []);
 
-  // 엔터키 입력 후 검색어 처리
   const handleSubmitSearch = () => {
-    setSearchResults(
-      simulatedResults.filter((result) => result.includes(searchText))
-    );
-    setSearchText(""); // 검색어 입력란 비우기
+    if (searchText.trim() !== "") {
+      setRecentSearches((prev) => [
+        searchText,
+        ...prev.filter((item) => item !== searchText),
+      ]);
+      setSearchResults(
+        simulatedResults.filter((result) => result.includes(searchText))
+      );
+    }
   };
 
-  // 즐겨찾기 추가 또는 삭제
+  const handleClearSearch = () => {
+    setSearchText("");
+    setSearchResults([]);
+  };
+
   const toggleFavorite = (item) => {
-    setFavorites((prevFavorites) => {
-      if (prevFavorites.includes(item)) {
-        return prevFavorites.filter((fav) => fav !== item);
-      } else {
-        return [...prevFavorites, item];
-      }
-    });
+    setFavorites((prevFavorites) =>
+      prevFavorites.includes(item)
+        ? prevFavorites.filter((fav) => fav !== item)
+        : [...prevFavorites, item]
+    );
   };
 
-  // 검색 결과 렌더링
   const renderSearchResult = ({ item }) => (
     <View style={styles.searchResult}>
       <Text style={styles.resultText}>{item}</Text>
@@ -64,8 +68,8 @@ export default function SearchPage({ navigation }) {
         <Image
           source={
             favorites.includes(item)
-              ? require("../../assets/images/filledstar.png") // 즐겨찾기된 상태
-              : require("../../assets/images/star.png") // 즐겨찾기되지 않은 상태
+              ? require("../../assets/images/filledstar.png")
+              : require("../../assets/images/star.png")
           }
           style={styles.favoriteIcon}
         />
@@ -75,29 +79,34 @@ export default function SearchPage({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* 상단 제목 이미지 */}
       <Image
         source={require("../../assets/images/Title.png")}
         style={styles.logo}
       />
-
-      {/* 우상단 정렬 버튼 */}
       <TouchableOpacity style={styles.sortButton} onPress={() => {}}>
         <View style={styles.sortBox} />
       </TouchableOpacity>
-
-      {/* 검색 바 */}
       <View style={styles.searchBar}>
+        <Image
+          source={require("../../assets/images/searchIcon.png")}
+          style={styles.searchIcon}
+        />
         <TextInput
           style={styles.searchInput}
-          placeholder="국가, 도시 검색"
+          placeholder="검색"
           value={searchText}
-          onChangeText={setSearchText} // 입력 상태를 업데이트만 함
-          onSubmitEditing={handleSubmitSearch} // 엔터키로 검색 제출
+          onChangeText={setSearchText}
+          onSubmitEditing={handleSubmitSearch}
         />
+        {searchText !== "" && (
+          <TouchableOpacity onPress={handleClearSearch} style={styles.clearButton}>
+            <Image
+              source={require("../../assets/images/clearIcon.png")}
+              style={styles.clearIcon}
+            />
+          </TouchableOpacity>
+        )}
       </View>
-
-      {/* 검색 결과 */}
       {searchResults.length > 0 ? (
         <FlatList
           data={searchResults}
@@ -106,7 +115,6 @@ export default function SearchPage({ navigation }) {
           contentContainerStyle={styles.resultsList}
         />
       ) : (
-        // 랜덤 데이터 표시
         <FlatList
           data={randomizedResults}
           renderItem={renderSearchResult}
@@ -146,18 +154,29 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    marginBottom: 10,
-    paddingVertical: 5,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    marginVertical: 10,
+  },
+  searchIcon: {
+    width: 20,
+    height: 20,
+    tintColor: "#808080",
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    padding: 10,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 5,
-    marginRight: 10,
+    paddingVertical: 10,
+  },
+  clearButton: {
+    padding: 5,
+  },
+  clearIcon: {
+    width: 20,
+    height: 20,
+    tintColor: "#808080",
   },
   searchResult: {
     padding: 20,
