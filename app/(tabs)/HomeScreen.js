@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,9 @@ import { TripsContext } from "./TripsContext";
 import CountryFlag from "react-native-country-flag";
 export default function HomeScreen({ navigation }) {
   const { trips } = useContext(TripsContext);
-
+  useEffect(() => {
+    console.log("HomeScreen - trips updated:", trips);
+  }, [trips]);
   const renderTrip = ({ item, index }) => (
     <TouchableOpacity
       style={styles.tripItem}
@@ -48,6 +50,7 @@ export default function HomeScreen({ navigation }) {
         data={trips}
         renderItem={renderTrip}
         keyExtractor={(item, index) => index.toString()}
+        extraData={trips}
         contentContainerStyle={styles.tripList}
       />
     </View>

@@ -79,10 +79,6 @@ const NotifPage = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color="black" />
-      </TouchableOpacity>
-
       <Text style={styles.header}>알림</Text>
 
       <ScrollView style={styles.scrollContainer}>

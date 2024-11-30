@@ -13,13 +13,6 @@ const SetupPage = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={styles.backButton}
-      >
-        <Ionicons name="arrow-back" size={24} color="black" />
-      </TouchableOpacity>
-
       {/* 상단 중앙의 환경설정 */}
       <Text style={styles.headerText}>환경설정</Text>
 

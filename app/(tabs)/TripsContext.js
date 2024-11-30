@@ -8,9 +8,25 @@ export const TripsProvider = ({ children }) => {
   const addTrip = (trip) => {
     setTrips((prevTrips) => [...prevTrips, trip]);
   };
-
+  const updateTrip = (index, updatedTrip) => {
+    setTrips((prevTrips) => {
+      // 기존 데이터를 깊게 복사
+      const newTrips = prevTrips.map((trip, i) => {
+        if (i === index) {
+          // days가 있는 경우 병합
+          return {
+            ...trip,
+            ...updatedTrip,
+            days: updatedTrip.days || trip.days, // days가 제공되지 않은 경우 기존 유지
+          };
+        }
+        return trip;
+      });
+      return newTrips;
+    });
+  };
   return (
-    <TripsContext.Provider value={{ trips, addTrip }}>
+    <TripsContext.Provider value={{ trips, addTrip, updateTrip }}>
       {children}
     </TripsContext.Provider>
   );

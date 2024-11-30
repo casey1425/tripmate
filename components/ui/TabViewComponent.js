@@ -1,452 +1,364 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   Dimensions,
-  TextInput,
+  TouchableOpacity,
   Modal,
+  TextInput,
   Alert,
 } from "react-native";
 import { TabView, TabBar } from "react-native-tab-view";
-import PrimaryButton from "./PrimaryButton";
 import Schedule from "./Schedule";
 import RemainingBudget from "./RemainingBudget";
+import { TripsContext } from "../../app/(tabs)/TripsContext";
+const generateDaysFromTravelPeriod = (travelPeriod, totalBudget) => {
+  const [start, end] = travelPeriod.split(" ~ ");
+  const startDate = new Date(start.trim());
+  const endDate = new Date(end.trim());
 
-export default function TabViewComponent() {
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    console.error("Invalid travelPeriod:", travelPeriod);
+    return [];
+  }
+
+  const days = [];
+  let currentDate = startDate;
+
+  // 총 예산을 일차별로 분배
+  const totalDays =
+    Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+  const dailyBudgetWon = Math.floor(totalBudget.won / totalDays);
+  const dailyBudgetDollar = Math.floor(totalBudget.dollar / totalDays);
+
+  while (currentDate <= endDate) {
+    days.push({
+      title: `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${currentDate
+        .getDate()
+        .toString()
+        .padStart(2, "0")} (${days.length + 1}일차)`,
+      expenses: [],
+      schedule: [],
+      budget: { won: dailyBudgetWon, dollar: dailyBudgetDollar },
+    });
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return days;
+};
+export default function TabViewComponent({ tripIndex, trip }) {
   const [index, setIndex] = useState(0);
-
-  const [activeButtons, setActiveButtons] = useState({
-    day1: "day1 버튼 1",
-    day2: "day2 버튼 1",
-    day3: "day3 버튼 1",
-    day4: "day4 버튼 1",
-  });
-
-  const [data, setData] = useState({
-    day1: { expenses: [], schedule: [] },
-    day2: { expenses: [], schedule: [] },
-    day3: { expenses: [], schedule: [] },
-    day4: { expenses: [], schedule: [] },
-  });
-  const allData = {
-    expenses: ["항목 1 - ₩100,000", "항목 2 - ₩200,000", "항목 3 - ₩50,000"],
-    schedule: [
-      { id: 1, text: "일정 1" },
-      { id: 2, text: "일정 2" },
-      { id: 3, text: "일정 3" },
-    ],
-  };
-
-  const [budget, setBudget] = useState({ won: 1000000, dollar: 721.9 });
-  const [remaining, setRemaining] = useState({ won: 992301, dollar: 716.34 });
-  const [exchangeRate, setExchangeRate] = useState(0);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editDayKey, setEditDayKey] = useState(null);
   const [newWon, setNewWon] = useState("");
   const [newDollar, setNewDollar] = useState("");
-  const [modalStates, setModalStates] = useState({
-    day1: false,
-    day2: false,
-    day3: false,
-    day4: false,
-  }); // 각 탭의 모달 상태 관리
+  const [activeTabs, setActiveTabs] = useState({}); // Active tab states
+  const { updateTrip } = useContext(TripsContext);
+  const totalBudget = {
+    won: parseInt(trip.budget || "0", 10),
+    dollar: parseFloat(trip.budgetDollar || "0"),
+  };
 
-  const [budgets, setBudgets] = useState({
-    day1: { won: 1000000, dollar: 721.9 },
-    day2: { won: 900000, dollar: 700.0 },
-    day3: { won: 800000, dollar: 650.5 },
-    day4: { won: 850000, dollar: 680.2 },
-  }); // 각 탭의 예산 관리
+  const tripWithDays = {
+    ...trip,
+    days: generateDaysFromTravelPeriod(trip.travelPeriod, totalBudget),
+  };
 
-  const [remainingBudgets, setRemainingBudgets] = useState({
-    day1: { won: 992301, dollar: 716.34 },
-    day2: { won: 890000, dollar: 698.0 },
-    day3: { won: 780000, dollar: 645.5 },
-    day4: { won: 840000, dollar: 678.2 },
-  }); // 각 탭의 남은 예산 관리
+  const initialData = tripWithDays.days.reduce((acc, day, idx) => {
+    acc[`day${idx + 1}`] = {
+      expenses: day.expenses || [],
+      schedule: day.schedule || [],
+      budget: day.budget || { won: 0, dollar: 0 },
+    };
+    return acc;
+  }, {});
 
-  const updateDayBudget = (dayKey) => {
-    let updatedWon = budgets[dayKey].won; // 기본값: 기존 값 유지
-    let updatedDollar = budgets[dayKey].dollar;
-
-    // ₩ 입력값 검증
-    if (newWon.trim() !== "") {
-      if (isNaN(Number(newWon))) {
-        Alert.alert("유효하지 않은 입력", "₩ 입력 칸에 숫자를 입력해주세요.");
-        return;
-      }
-      updatedWon = Number(newWon); // 입력값이 유효하면 업데이트
+  const [data, setData] = useState(initialData);
+  useEffect(() => {
+    if (trip.days) {
+      const updatedData = trip.days.reduce((acc, day, idx) => {
+        acc[`day${idx + 1}`] = {
+          expenses: day.expenses || [],
+          schedule: day.schedule || [],
+          budget: day.budget || { won: 0, dollar: 0 },
+        };
+        return acc;
+      }, {});
+      setData(updatedData);
     }
-
-    // $ 입력값 검증
-    if (newDollar.trim() !== "") {
-      if (isNaN(Number(newDollar))) {
-        Alert.alert("유효하지 않은 입력", "$ 입력 칸에 숫자를 입력해주세요.");
-        return;
-      }
-      updatedDollar = Number(newDollar); // 입력값이 유효하면 업데이트
-    }
-
-    // 상태 업데이트
-    setBudgets((prev) => ({
-      ...prev,
-      [dayKey]: { won: updatedWon, dollar: updatedDollar },
-    }));
-
-    setRemainingBudgets((prev) => ({
-      ...prev,
-      [dayKey]: { won: updatedWon, dollar: updatedDollar },
-    }));
-
-    // 입력 필드 초기화 및 모달 닫기
-    setNewWon("");
-    setNewDollar("");
-    closeModal();
+  }, [trip]);
+  const getAllBudget = () => {
+    const totalWon = Object.values(data).reduce(
+      (sum, day) => sum + (day.budget?.won || 0),
+      0
+    );
+    const totalDollar = Object.values(data).reduce(
+      (sum, day) => sum + (day.budget?.dollar || 0),
+      0
+    );
+    return { won: totalWon, dollar: totalDollar };
   };
 
   const getAllData = () => ({
-    expenses: [
-      ...data.day1.expenses,
-      ...data.day2.expenses,
-      ...data.day3.expenses,
-      ...data.day4.expenses,
-    ],
-    schedule: [
-      ...data.day1.schedule,
-      ...data.day2.schedule,
-      ...data.day3.schedule,
-      ...data.day4.schedule,
-    ],
+    expenses: Object.values(data).flatMap((day) => day.expenses || []),
+    schedule: Object.values(data).flatMap((day) => day.schedule || []),
   });
 
+  const updateScheduleForDay = (dayKey, newSchedule) => {
+    setData((prev) => ({
+      ...prev,
+      [dayKey]: { ...prev[dayKey], schedule: newSchedule },
+    }));
+  };
+
+  const updateBudget = () => {
+    if (!editDayKey) return;
+
+    const updatedWon = newWon.trim()
+      ? parseInt(newWon, 10)
+      : data[editDayKey]?.budget?.won || 0;
+    const updatedDollar = newDollar.trim()
+      ? parseFloat(newDollar)
+      : data[editDayKey]?.budget?.dollar || 0;
+
+    if (isNaN(updatedWon) || isNaN(updatedDollar)) {
+      Alert.alert("유효하지 않은 입력", "숫자를 입력하세요.");
+      return;
+    }
+
+    if (editDayKey === "all") {
+      // 전체 예산 수정
+      trip.budget = updatedWon.toString();
+      trip.budgetDollar = updatedDollar.toString();
+
+      const totalDays = Object.keys(data).length;
+      const dailyBudgetWon = Math.floor(updatedWon / totalDays);
+      const dailyBudgetDollar = Math.floor(updatedDollar / totalDays);
+
+      const updatedData = Object.keys(data).reduce((acc, key) => {
+        acc[key] = {
+          ...data[key],
+          budget: { won: dailyBudgetWon, dollar: dailyBudgetDollar },
+        };
+        return acc;
+      }, {});
+
+      setData(updatedData);
+
+      const updatedTrip = {
+        ...trip,
+        budget: updatedWon.toString(),
+        budgetDollar: updatedDollar.toString(),
+        days: Object.values(updatedData), // 업데이트된 일차 데이터 포함
+      };
+
+      console.log("Updated Trip for All Days:", updatedTrip);
+      updateTrip(tripIndex, updatedTrip);
+    } else {
+      // 특정 일차 예산 수정
+      const updatedData = {
+        ...data,
+        [editDayKey]: {
+          ...data[editDayKey],
+          budget: { won: updatedWon, dollar: updatedDollar },
+        },
+      };
+
+      // 전체 예산 다시 계산
+      const updatedTotalWon = Object.values(updatedData).reduce(
+        (sum, day) => sum + (day.budget?.won || 0),
+        0
+      );
+      const updatedTotalDollar = Object.values(updatedData).reduce(
+        (sum, day) => sum + (day.budget?.dollar || 0),
+        0
+      );
+
+      setData(updatedData);
+
+      const updatedTrip = {
+        ...trip,
+        budget: updatedTotalWon.toString(),
+        budgetDollar: updatedTotalDollar.toString(),
+        days: Object.values(updatedData), // 업데이트된 일차 데이터 포함
+      };
+
+      console.log("Updated Trip in updateBudget:", updatedTrip);
+      updateTrip(tripIndex, updatedTrip);
+    }
+
+    // 초기화 및 모달 닫기
+    setNewWon("");
+    setNewDollar("");
+    setEditDayKey(null);
+    setIsModalVisible(false);
+  };
+
+  const handleTabChange = (dayKey, tab) => {
+    setActiveTabs((prev) => ({
+      ...prev,
+      [dayKey]: tab,
+    }));
+  };
+
   const renderDayRoute = ({ dayKey, title }) => {
-    const activeButton = activeButtons[dayKey];
-
-    const openModal = () => {
-      setModalStates((prev) => ({ ...prev, [dayKey]: true }));
-    };
-
-    // closeModal 함수 정의
-    const closeModal = () => {
-      setModalStates((prev) => ({ ...prev, [dayKey]: false }));
-      setNewWon(""); // 입력 필드 초기화
-      setNewDollar(""); // 입력 필드 초기화
-    };
-
-    const updateDayBudget = () => {
-      let updatedWon = budgets[dayKey].won; // 기본값: 기존 값 유지
-      let updatedDollar = budgets[dayKey].dollar;
-
-      // ₩ 입력값 검증
-      if (newWon.trim() !== "") {
-        if (isNaN(Number(newWon))) {
-          Alert.alert("유효하지 않은 입력", "₩ 입력 칸에 숫자를 입력해주세요.");
-          return;
-        }
-        updatedWon = Number(newWon); // 입력값이 유효하면 업데이트
-      }
-
-      // $ 입력값 검증
-      if (newDollar.trim() !== "") {
-        if (isNaN(Number(newDollar))) {
-          Alert.alert("유효하지 않은 입력", "$ 입력 칸에 숫자를 입력해주세요.");
-          return;
-        }
-        updatedDollar = Number(newDollar); // 입력값이 유효하면 업데이트
-      }
-
-      // 상태 업데이트
-      setBudgets((prev) => ({
-        ...prev,
-        [dayKey]: { won: updatedWon, dollar: updatedDollar },
-      }));
-
-      setRemainingBudgets((prev) => ({
-        ...prev,
-        [dayKey]: { won: updatedWon, dollar: updatedDollar },
-      }));
-
-      // 모달 닫기
-      closeModal();
-    };
+    const activeTab = activeTabs[dayKey] || "expenses";
 
     return (
       <View
         style={[
           styles.screen,
-          {
-            backgroundColor:
-              activeButton === `${dayKey} 버튼 1` ? "#FFFFFF" : "#F8EFFF",
-          },
+          activeTab === "expenses" && styles.expensesBackground,
         ]}
       >
-        <View style={styles.ButtonContainer}>
-          <PrimaryButton
-            title={`${title} 내역`}
-            onPress={() =>
-              setActiveButtons((prev) => ({
-                ...prev,
-                [dayKey]: `${dayKey} 버튼 1`,
-              }))
-            }
-            isActive={activeButton === `${dayKey} 버튼 1`}
-          />
-          <PrimaryButton
-            title={`${title} 일정`}
-            onPress={() =>
-              setActiveButtons((prev) => ({
-                ...prev,
-                [dayKey]: `${dayKey} 버튼 2`,
-              }))
-            }
-            isActive={activeButton === `${dayKey} 버튼 2`}
-          />
+        {/* 탭 전환 버튼 */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              activeTab === "expenses" && styles.activeTabButton,
+            ]}
+            onPress={() => handleTabChange(dayKey, "expenses")}
+          >
+            <Text
+              style={[
+                styles.tabButtonText,
+                activeTab === "expenses" && styles.activeTabButtonText,
+              ]}
+            >
+              {dayKey === "all" ? "전체 내역" : `${title} 내역`}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              activeTab === "schedule" && styles.activeTabButton,
+            ]}
+            onPress={() => handleTabChange(dayKey, "schedule")}
+          >
+            <Text
+              style={[
+                styles.tabButtonText,
+                activeTab === "schedule" && styles.activeTabButtonText,
+              ]}
+            >
+              {dayKey === "all" ? "전체 일정" : `${title} 일정`}
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        {activeButton === `${dayKey} 버튼 1` ? (
-          <View style={styles.contentWrapper}>
-            <Text style={styles.header}>{`${title} 내역`}</Text>
-            <FlatList
-              data={data[dayKey].expenses}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={({ item }) => (
-                <View style={styles.listItemContainer}>
-                  <Text style={styles.itemText}>{item}</Text>
-                </View>
-              )}
-              contentContainerStyle={{ paddingBottom: 10 }}
-            />
+        {/* 지출내역 표시*/}
+        {activeTab === "expenses" && (
+          <Text style={styles.tabInfoText}>
+            {dayKey === "all" ? "전체 내역" : `${title} 내역`}
+          </Text>
+        )}
+        {/* 내용 표시 */}
+        {activeTab === "expenses" ? (
+          <View style={styles.remainingBudgetContainer}>
             <RemainingBudget
-              remaining={remainingBudgets[dayKey]}
-              budget={budgets[dayKey]}
-              onSettingsPress={openModal}
+              remaining={
+                dayKey === "all"
+                  ? getAllBudget()
+                  : data[dayKey]?.budget || { won: 0, dollar: 0 }
+              }
+              budget={
+                dayKey === "all"
+                  ? getAllBudget()
+                  : data[dayKey]?.budget || { won: 0, dollar: 0 }
+              }
+              onSettingsPress={() => {
+                setEditDayKey(dayKey);
+                setIsModalVisible(true);
+              }}
             />
           </View>
         ) : (
           <Schedule
-            data={data[dayKey].schedule}
-            onUpdate={(newSchedule) =>
-              setData((prev) => ({
-                ...prev,
-                [dayKey]: {
-                  ...prev[dayKey],
-                  schedule: newSchedule,
-                },
-              }))
+            data={
+              dayKey === "all"
+                ? getAllData().schedule
+                : data[dayKey]?.schedule || []
             }
+            onUpdate={(newSchedule) => {
+              if (dayKey !== "all") {
+                updateScheduleForDay(dayKey, newSchedule);
+              }
+            }}
+            hideInput={dayKey === "all"}
           />
         )}
 
-        {/* 모달 */}
-        <Modal
-          transparent={true}
-          visible={modalStates[dayKey]}
-          animationType="slide"
-          onRequestClose={closeModal}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>예산 수정</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="₩ 새 예산 입력"
-                placeholderTextColor="gray"
-                keyboardType="numeric"
-                value={newWon}
-                onChangeText={setNewWon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="$ 새 예산 입력"
-                placeholderTextColor="gray"
-                keyboardType="numeric"
-                value={newDollar}
-                onChangeText={setNewDollar}
-              />
-              <View style={styles.modalButtons}>
-                <PrimaryButton title="저장" onPress={updateDayBudget} />
-                <PrimaryButton title="취소" onPress={closeModal} />
-              </View>
-            </View>
-          </View>
-        </Modal>
-      </View>
-    );
-  };
-
-  const 전체RouteComponent = ({
-    allData,
-    budget,
-    remaining,
-    setBudget,
-    setRemaining,
-    isModalVisible,
-    setIsModalVisible,
-  }) => {
-    const [activeButton, setActiveButton] = useState("전체 지출 내역");
-    const [newWon, setNewWon] = useState("");
-    const [newDollar, setNewDollar] = useState("");
-
-    const updateBudget = () => {
-      // 입력값 검증
-      if (newWon && isNaN(parseFloat(newWon))) {
-        Alert.alert("유효하지 않은 입력", "₩ 입력 칸에 숫자를 입력해주세요.");
-        return;
-      }
-
-      if (newDollar && isNaN(parseFloat(newDollar))) {
-        Alert.alert("유효하지 않은 입력", "$ 입력 칸에 숫자를 입력해주세요.");
-        return;
-      }
-
-      const updatedWon = newWon ? parseFloat(newWon) : budget.won;
-      const updatedDollar = newDollar ? parseFloat(newDollar) : budget.dollar;
-
-      setBudget({ won: updatedWon, dollar: updatedDollar });
-      setRemaining({ won: updatedWon, dollar: updatedDollar });
-
-      setIsModalVisible(false);
-      setNewWon("");
-      setNewDollar("");
-    };
-
-    return (
-      <View
-        style={[
-          styles.screen,
-          {
-            backgroundColor:
-              activeButton === "전체 지출 내역" ? "#FFFFFF" : "#F8EFFF",
-          },
-        ]}
-      >
-        {/* 버튼 컨테이너 */}
-        <View style={styles.ButtonContainer}>
-          <PrimaryButton
-            title="전체 지출 내역"
-            onPress={() => setActiveButton("전체 지출 내역")}
-            isActive={activeButton === "전체 지출 내역"}
-          />
-          <PrimaryButton
-            title="전체 일정"
-            onPress={() => setActiveButton("전체 일정")}
-            isActive={activeButton === "전체 일정"}
-          />
-        </View>
-
-        {/* 내용 렌더링 */}
-        <View style={styles.contentWrapper}>
-          {activeButton === "전체 일정" ? (
-            <FlatList
-              data={allData.schedule}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => (
-                <View style={styles.listItemContainer}>
-                  <Text style={styles.listItemText}>{item.text}</Text>
-                </View>
-              )}
-              contentContainerStyle={{ paddingBottom: 10 }}
-            />
-          ) : (
-            <View>
-              <Text style={styles.header}>전체 지출 내역</Text>
-              <FlatList
-                data={allData.expenses}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => (
-                  <View style={styles.listItemContainer}>
-                    <Text style={styles.listItemText}>{item}</Text>
-                  </View>
-                )}
-                contentContainerStyle={{ paddingBottom: 10 }}
-              />
-            </View>
-          )}
-        </View>
-
-        {/* 남은 예산 섹션 */}
-        {activeButton === "전체 지출 내역" && (
-          <RemainingBudget
-            remaining={remaining}
-            budget={budget}
-            onSettingsPress={() => setIsModalVisible(true)}
-          />
-        )}
-
-        {/* 모달 */}
-        <Modal
-          transparent={true}
-          visible={isModalVisible}
-          animationType="slide"
-          onRequestClose={() => setIsModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>예산 수정</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="₩ 새 예산 입력"
-                placeholderTextColor="gray"
-                keyboardType="numeric"
-                value={newWon}
-                onChangeText={setNewWon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="$ 새 예산 입력"
-                placeholderTextColor="gray"
-                keyboardType="numeric"
-                value={newDollar}
-                onChangeText={setNewDollar}
-              />
-              <View style={styles.modalButtons}>
-                <PrimaryButton title="저장" onPress={updateBudget} />
-                <PrimaryButton
-                  title="취소"
-                  onPress={() => setIsModalVisible(false)}
+        {/* 예산 수정 모달 */}
+        {isModalVisible && editDayKey === dayKey && (
+          <Modal
+            visible={isModalVisible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setIsModalVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>예산 수정</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="₩ 새 예산 입력"
+                  placeholderTextColor="gray"
+                  keyboardType="numeric"
+                  value={newWon}
+                  onChangeText={setNewWon}
                 />
+                <TextInput
+                  style={styles.input}
+                  placeholder="$ 새 예산 입력"
+                  placeholderTextColor="gray"
+                  keyboardType="numeric"
+                  value={newDollar}
+                  onChangeText={setNewDollar}
+                />
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={styles.saveButton}
+                    onPress={updateBudget}
+                  >
+                    <Text style={styles.saveButtonText}>저장</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() => setIsModalVisible(false)}
+                  >
+                    <Text style={styles.cancelButtonText}>취소</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
-        </Modal>
+          </Modal>
+        )}
       </View>
     );
   };
 
-  const routes = [
-    { key: "전체", title: "전체" },
-    { key: "1일차", title: "1일차" },
-    { key: "2일차", title: "2일차" },
-    { key: "3일차", title: "3일차" },
-    { key: "4일차", title: "4일차" },
-  ];
+  const routes = generateDaysFromTravelPeriod(
+    trip.travelPeriod,
+    totalBudget
+  ).map((day, idx) => ({
+    key: `day${idx + 1}`,
+    title: `${idx + 1}일차`,
+  }));
+
+  routes.unshift({ key: "all", title: "전체" });
 
   const renderScene = ({ route }) => {
-    switch (route.key) {
-      case "전체":
-        return (
-          <전체RouteComponent
-            allData={getAllData()} // getAllData로 동적 데이터 전달
-            budget={budget}
-            remaining={remaining}
-            setBudget={setBudget}
-            setRemaining={setRemaining}
-            isModalVisible={isModalVisible}
-            setIsModalVisible={setIsModalVisible}
-          />
-        );
-      case "1일차":
-        return renderDayRoute({ dayKey: "day1", title: "1일차" });
-      case "2일차":
-        return renderDayRoute({ dayKey: "day2", title: "2일차" });
-      case "3일차":
-        return renderDayRoute({ dayKey: "day3", title: "3일차" });
-      case "4일차":
-        return renderDayRoute({ dayKey: "day4", title: "4일차" });
-      default:
-        return null;
-    }
+    const dayKey =
+      route.key === "all"
+        ? "all"
+        : `day${parseInt(route.key.replace("day", ""), 10)}`;
+    const title = route.title;
+
+    return renderDayRoute({ dayKey, title });
   };
 
   return (
@@ -454,18 +366,33 @@ export default function TabViewComponent() {
       navigationState={{ index, routes }}
       renderScene={renderScene}
       onIndexChange={setIndex}
+      initialLayout={{ width: Dimensions.get("window").width }}
       renderTabBar={(props) => (
         <TabBar
           {...props}
-          indicatorStyle={{ backgroundColor: "gray", height: 2 }}
-          style={{ backgroundColor: "#fff" }}
-          labelStyle={{ color: "black", fontSize: 12 }}
-          tabStyle={{ flexDirection: "row" }}
+          scrollEnabled={routes.length > 5}
+          style={{
+            backgroundColor: "#FFFFFF",
+            elevation: 4,
+          }}
+          indicatorStyle={{
+            backgroundColor: "gray",
+            height: 3,
+          }}
+          labelStyle={{
+            fontSize: 14,
+            fontWeight: "bold",
+          }}
           activeColor="black"
           inactiveColor="gray"
+          tabStyle={{
+            width:
+              routes.length > 5
+                ? 90
+                : Dimensions.get("window").width / routes.length,
+          }}
         />
       )}
-      initialLayout={{ width: Dimensions.get("window").width }}
     />
   );
 }
@@ -473,46 +400,69 @@ export default function TabViewComponent() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    backgroundColor: "#F8EFFF",
     padding: 10,
   },
-  listItemContainer: {
-    backgroundColor: "#fff",
-    padding: 10,
-    borderRadius: 5,
-    marginVertical: 5,
+  expensesBackground: {
+    backgroundColor: "#FFFFFF", // 내역 탭의 배경색
+  },
+  header: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  remainingBudgetContainer: {
+    marginTop: "auto", // 화면의 가장 아래로 배치
+    marginBottom: 15,
+  },
+  tabContainer: {
+    flexDirection: "row",
+    marginBottom: 15,
+    justifyContent: "flex-start", // 왼쪽 정렬
+    alignItems: "center",
+  },
+  tabButton: {
+    width: 90, // 버튼 크기 조정
+    height: 35, // 높이 축소
+    marginRight: 10, // 버튼 간 간격
     borderWidth: 1,
-    borderColor: "#E0E0E0", // 얇은 테두리
-    shadowColor: "#000", // 그림자
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2, // Android 그림자
+    borderColor: "white",
+    alignItems: "center",
+    justifyContent: "center", // 텍스트 중앙 정렬
+    borderRadius: 5,
+    backgroundColor: "white",
+    marginTop: 20,
+    marginBottom: 10,
   },
-  listItemText: {
-    fontSize: 16,
+  activeTabButton: {
+    backgroundColor: "#D9D9D9", // 활성화된 버튼 색상
+  },
+  tabButtonText: {
+    fontSize: 12, // 텍스트 크기 축소
     color: "#333",
   },
-  ButtonContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    marginVertical: 10,
+  activeTabButtonText: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#000",
   },
-  contentWrapper: {
-    flex: 1,
-    justifyContent: "space-between",
+  contentText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginVertical: 10,
   },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.5)", // 배경을 어둡게
   },
   modalContent: {
-    backgroundColor: "white",
+    backgroundColor: "#fff",
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 10, // 모서리를 둥글게
     width: "80%",
-    alignItems: "center",
   },
   modalTitle: {
     fontSize: 18,
@@ -522,15 +472,31 @@ const styles = StyleSheet.create({
   input: {
     width: "100%",
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: "#ccc",
     borderRadius: 5,
     padding: 10,
     marginBottom: 10,
-    fontSize: 16,
   },
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "100%",
+  },
+  saveButton: {
+    padding: 10,
+    backgroundColor: "#6200EE",
+    borderRadius: 5,
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  cancelButton: {
+    padding: 10,
+    backgroundColor: "#E0E0E0",
+    borderRadius: 5,
+  },
+  cancelButtonText: {
+    color: "#000",
+    fontWeight: "bold",
   },
 });

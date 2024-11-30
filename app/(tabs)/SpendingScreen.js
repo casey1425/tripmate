@@ -17,7 +17,7 @@ export default function SpendingScreen({ route, navigation }) {
       >
         <Ionicons name="arrow-back-outline" size={24} color="black" />
       </TouchableOpacity>
-      <TabViewComponent trip={trip} />
+      <TabViewComponent tripIndex={tripIndex} trip={trip} />
     </View>
   );
 }
