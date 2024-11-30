@@ -1,20 +1,14 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-  Image,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Image } from "react-native";
+import { useFavorites } from "./FavoritesContext";
 
 export default function SearchPage({ navigation }) {
   const [searchText, setSearchText] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [favorites, setFavorites] = useState([]);
-  const [recentSearches, setRecentSearches] = useState([]);
+  const [searchResults, setSearchResults] = useState([]); // add setSearchResults here
+  const { favorites, toggleFavorite } = useFavorites();
   const [randomizedResults, setRandomizedResults] = useState([]);
+  const [sortOption, setSortOption] = useState("이름순");
+  const [dropdownVisible, setDropdownVisible] = useState(false);
 
   const simulatedResults = [
     "일본1",
@@ -35,10 +29,6 @@ export default function SearchPage({ navigation }) {
 
   const handleSubmitSearch = () => {
     if (searchText.trim() !== "") {
-      setRecentSearches((prev) => [
-        searchText,
-        ...prev.filter((item) => item !== searchText),
-      ]);
       setSearchResults(
         simulatedResults.filter((result) => result.includes(searchText))
       );
@@ -47,15 +37,7 @@ export default function SearchPage({ navigation }) {
 
   const handleClearSearch = () => {
     setSearchText("");
-    setSearchResults([]);
-  };
-
-  const toggleFavorite = (item) => {
-    setFavorites((prevFavorites) =>
-      prevFavorites.includes(item)
-        ? prevFavorites.filter((fav) => fav !== item)
-        : [...prevFavorites, item]
-    );
+    setSearchResults([]); // Reset search results on clear
   };
 
   const renderSearchResult = ({ item }) => (
@@ -63,7 +45,7 @@ export default function SearchPage({ navigation }) {
       <Text style={styles.resultText}>{item}</Text>
       <TouchableOpacity
         style={styles.favoriteButton}
-        onPress={() => toggleFavorite(item)}
+        onPress={() => toggleFavorite(item)} // Use toggleFavorite from context
       >
         <Image
           source={
@@ -77,34 +59,69 @@ export default function SearchPage({ navigation }) {
     </View>
   );
 
+  const handleSortOptionSelect1 = (option) => {
+    setSortOption(option);
+    setDropdownVisible(false);
+
+    let sortedResults = [...searchResults];
+    
+    if (option === "이름순") {
+      sortedResults = sortedResults.sort((a, b) => a.localeCompare(b, "ko"));
+    } else if (option === "최신순") {
+      // 최신순 정렬 로직 추가 (예시)
+    } else if (option === "오래된순") {
+      // 오래된순 정렬 로직 추가 (예시)
+    }
+
+    setSearchResults(sortedResults); // Update the search results with the sorted list
+  };
+
   return (
     <View style={styles.container}>
       <Image
         source={require("../../assets/images/Title.png")}
         style={styles.logo}
       />
-      <TouchableOpacity style={styles.sortButton} onPress={() => {}}>
-        <View style={styles.sortBox} />
-      </TouchableOpacity>
-      <View style={styles.searchBar}>
-        <Image
-          source={require("../../assets/images/searchIcon.png")}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="검색"
-          value={searchText}
-          onChangeText={setSearchText}
-          onSubmitEditing={handleSubmitSearch}
-        />
-        {searchText !== "" && (
-          <TouchableOpacity onPress={handleClearSearch} style={styles.clearButton}>
-            <Image
-              source={require("../../assets/images/clearIcon.png")}
-              style={styles.clearIcon}
-            />
-          </TouchableOpacity>
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Image
+            source={require("../../assets/images/searchIcon.png")}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="검색"
+            value={searchText}
+            onChangeText={setSearchText}
+            onSubmitEditing={handleSubmitSearch}
+          />
+          {searchText !== "" && (
+            <TouchableOpacity onPress={handleClearSearch} style={styles.clearButton}>
+              <Image
+                source={require("../../assets/images/clearIcon.png")}
+                style={styles.clearIcon}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity onPress={() => setDropdownVisible(!dropdownVisible)} style={styles.sortButton}>
+          <Image
+            source={require("../../assets/images/sortIcon.png")}
+            style={styles.sortIcon}
+          />
+        </TouchableOpacity>
+        {dropdownVisible && (
+          <View style={styles.dropdown}>
+            <TouchableOpacity onPress={() => handleSortOptionSelect1("이름순")} style={styles.dropdownItem}>
+              <Text>이름순</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleSortOptionSelect1("최신순")} style={styles.dropdownItem}>
+              <Text>최신순</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleSortOptionSelect1("오래된순")} style={styles.dropdownItem}>
+              <Text>오래된순</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
       {searchResults.length > 0 ? (
@@ -139,25 +156,40 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginLeft: 10,
   },
-  sortButton: {
-    position: "absolute",
-    right: 10,
-    padding: 10,
-    marginTop: 5,
-  },
-  sortBox: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#000000",
-    borderRadius: 5,
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+    gap: 10,
   },
   searchBar: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#f0f0f0",
     borderRadius: 25,
     paddingHorizontal: 15,
-    marginVertical: 10,
+  },
+  sortButton: {
+    padding: 10,
+    position: 'relative',
+  },
+  sortIcon: {
+    width: 24,
+    height: 24,
+  },
+  dropdown: {
+    position: "absolute",
+    top: 50, // Adjust based on your layout
+    right: 0,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 5,
+    zIndex: 1,
+  },
+  dropdownItem: {
+    padding: 10,
   },
   searchIcon: {
     width: 20,

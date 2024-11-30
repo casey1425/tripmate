@@ -13,6 +13,7 @@ import LoginPage from "./(tabs)/LoginPage";
 import SignupPage from "./(tabs)/SignupPage";
 import ForgotPassword from "./(tabs)/ForgotPassword";
 import SearchPage from "./(tabs)/SearchPage";
+import { FavoritesProvider } from "./(tabs)/FavoritesContext";
 import FavsPage from "./(tabs)/FavsPage";
 import NotifPage from "./(tabs)/NotifPage";
 import SetupPage from "./(tabs)/SetupPage";
@@ -110,14 +111,15 @@ function TabNavigator() {
 // **스택 네비게이터**
 export default function App() {
   return (
-    <TripsProvider>
-      <Stack.Navigator
-        initialRouteName="Intro"
-        screenOptions={{
-          headerShown: false,
-          cardStyle: { backgroundColor: "#FFFFFF" },
-        }}
-      >
+    <FavoritesProvider>
+      <TripsProvider>
+        <Stack.Navigator
+          initialRouteName="Intro"
+          screenOptions={{
+            headerShown: false,
+            cardStyle: { backgroundColor: "#FFFFFF" },
+          }}
+        >
         {/* 인트로 및 인증 화면 */}
         <Stack.Screen
           name="Intro"
@@ -173,7 +175,8 @@ export default function App() {
           component={Setup4}
           options={{ title: "Setup4" }}
         />
-      </Stack.Navigator>
-    </TripsProvider>
+        </Stack.Navigator>
+      </TripsProvider>
+    </FavoritesProvider>
   );
 }
