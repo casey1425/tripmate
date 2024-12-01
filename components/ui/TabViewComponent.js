@@ -121,11 +121,8 @@ export default function TabViewComponent({ tripIndex, trip }) {
     const updatedWon = newWon.trim()
       ? parseInt(newWon, 10)
       : data[editDayKey]?.budget?.won || 0;
-    const updatedDollar = newDollar.trim()
-      ? parseFloat(newDollar)
-      : data[editDayKey]?.budget?.dollar || 0;
 
-    if (isNaN(updatedWon) || isNaN(updatedDollar)) {
+    if (isNaN(updatedWon)) {
       Alert.alert("유효하지 않은 입력", "숫자를 입력하세요.");
       return;
     }
@@ -133,16 +130,14 @@ export default function TabViewComponent({ tripIndex, trip }) {
     if (editDayKey === "all") {
       // 전체 예산 수정
       trip.budget = updatedWon.toString();
-      trip.budgetDollar = updatedDollar.toString();
 
       const totalDays = Object.keys(data).length;
       const dailyBudgetWon = Math.floor(updatedWon / totalDays);
-      const dailyBudgetDollar = Math.floor(updatedDollar / totalDays);
 
       const updatedData = Object.keys(data).reduce((acc, key) => {
         acc[key] = {
           ...data[key],
-          budget: { won: dailyBudgetWon, dollar: dailyBudgetDollar },
+          budget: { won: dailyBudgetWon },
         };
         return acc;
       }, {});
@@ -152,7 +147,6 @@ export default function TabViewComponent({ tripIndex, trip }) {
       const updatedTrip = {
         ...trip,
         budget: updatedWon.toString(),
-        budgetDollar: updatedDollar.toString(),
         days: Object.values(updatedData), // 업데이트된 일차 데이터 포함
       };
 
@@ -164,7 +158,7 @@ export default function TabViewComponent({ tripIndex, trip }) {
         ...data,
         [editDayKey]: {
           ...data[editDayKey],
-          budget: { won: updatedWon, dollar: updatedDollar },
+          budget: { won: updatedWon },
         },
       };
 
@@ -173,17 +167,12 @@ export default function TabViewComponent({ tripIndex, trip }) {
         (sum, day) => sum + (day.budget?.won || 0),
         0
       );
-      const updatedTotalDollar = Object.values(updatedData).reduce(
-        (sum, day) => sum + (day.budget?.dollar || 0),
-        0
-      );
 
       setData(updatedData);
 
       const updatedTrip = {
         ...trip,
         budget: updatedTotalWon.toString(),
-        budgetDollar: updatedTotalDollar.toString(),
         days: Object.values(updatedData), // 업데이트된 일차 데이터 포함
       };
 
@@ -193,7 +182,6 @@ export default function TabViewComponent({ tripIndex, trip }) {
 
     // 초기화 및 모달 닫기
     setNewWon("");
-    setNewDollar("");
     setEditDayKey(null);
     setIsModalVisible(false);
   };
@@ -270,6 +258,7 @@ export default function TabViewComponent({ tripIndex, trip }) {
                   ? getAllBudget()
                   : data[dayKey]?.budget || { won: 0, dollar: 0 }
               }
+              countryCurrencyCode={trip.countryCode} // 국가 코드를 전달
               onSettingsPress={() => {
                 setEditDayKey(dayKey);
                 setIsModalVisible(true);
@@ -310,14 +299,6 @@ export default function TabViewComponent({ tripIndex, trip }) {
                   keyboardType="numeric"
                   value={newWon}
                   onChangeText={setNewWon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="$ 새 예산 입력"
-                  placeholderTextColor="gray"
-                  keyboardType="numeric"
-                  value={newDollar}
-                  onChangeText={setNewDollar}
                 />
                 <View style={styles.modalButtons}>
                   <TouchableOpacity
@@ -372,7 +353,7 @@ export default function TabViewComponent({ tripIndex, trip }) {
           {...props}
           scrollEnabled={routes.length > 5}
           style={{
-            backgroundColor: "#FFFFFF",
+            backgroundColor: "white",
             elevation: 4,
           }}
           indicatorStyle={{
@@ -483,7 +464,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     padding: 10,
-    backgroundColor: "#6200EE",
+    backgroundColor: "black",
     borderRadius: 5,
   },
   saveButtonText: {
