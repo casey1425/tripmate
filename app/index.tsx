@@ -24,9 +24,6 @@ import { Text, View } from "react-native";
 // 네비게이터 생성
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
-function PlaceholderPage() {
-
-}
 // **탭 네비게이터**
 function TabNavigator() {
   return (
