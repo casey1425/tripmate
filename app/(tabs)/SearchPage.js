@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,13 +8,16 @@ import {
   StyleSheet,
   Image,
 } from "react-native";
+import { useFavorites } from "./FavoritesContext";
 
 export default function SearchPage({ navigation }) {
-  const [searchText, setSearchText] = useState(""); // 현재 검색어 상태
-  const [searchResults, setSearchResults] = useState([]); // 검색 결과 상태
-  const [favorites, setFavorites] = useState([]); // 즐겨찾기 상태
+  const [searchText, setSearchText] = useState("");
+  const [searchResults, setSearchResults] = useState([]); // add setSearchResults here
+  const { favorites, toggleFavorite } = useFavorites();
+  const [randomizedResults, setRandomizedResults] = useState([]);
+  const [sortOption, setSortOption] = useState("이름순");
+  const [dropdownVisible, setDropdownVisible] = useState(false);
 
-  // 임시 검색 결과 데이터
   const simulatedResults = [
     "일본1",
     "일본2",
@@ -23,49 +26,40 @@ export default function SearchPage({ navigation }) {
     "프랑스2",
     "미국1",
     "스페인1",
-    "스페인1",
-    "스페인1",
-    "스페인1",
+    "스페인2",
+    "스페인3",
+    "스페인4",
   ];
 
-  // 검색어 입력 중 처리
-  const handleSearch = (text) => {
-    setSearchText(text);
-  };
+  useEffect(() => {
+    setRandomizedResults(simulatedResults.sort(() => Math.random() - 0.5));
+  }, []);
 
-  // 엔터키 입력 후 검색어 처리
   const handleSubmitSearch = () => {
-    // 검색 결과 필터링
-    setSearchResults(
-      simulatedResults.filter((result) => result.includes(searchText))
-    );
-    setSearchText(""); // 검색어 입력란 비우기
+    if (searchText.trim() !== "") {
+      setSearchResults(
+        simulatedResults.filter((result) => result.includes(searchText))
+      );
+    }
   };
 
-  // 즐겨찾기 추가 또는 삭제
-  const toggleFavorite = (item) => {
-    setFavorites((prevFavorites) => {
-      if (prevFavorites.includes(item)) {
-        return prevFavorites.filter((fav) => fav !== item);
-      } else {
-        return [...prevFavorites, item];
-      }
-    });
+  const handleClearSearch = () => {
+    setSearchText("");
+    setSearchResults([]); // Reset search results on clear
   };
 
-  // 검색 결과 렌더링
   const renderSearchResult = ({ item }) => (
     <View style={styles.searchResult}>
       <Text style={styles.resultText}>{item}</Text>
       <TouchableOpacity
         style={styles.favoriteButton}
-        onPress={() => toggleFavorite(item)}
+        onPress={() => toggleFavorite(item)} // Use toggleFavorite from context
       >
         <Image
           source={
             favorites.includes(item)
-              ? require("../../assets/images/filledstar.png") // 즐겨찾기된 상태
-              : require("../../assets/images/star.png") // 즐겨찾기되지 않은 상태
+              ? require("../../assets/images/filledstar.png")
+              : require("../../assets/images/star.png")
           }
           style={styles.favoriteIcon}
         />
@@ -73,26 +67,96 @@ export default function SearchPage({ navigation }) {
     </View>
   );
 
+  const handleSortOptionSelect1 = (option) => {
+    setSortOption(option);
+    setDropdownVisible(false);
+
+    let sortedResults = [...searchResults];
+
+    if (option === "이름순") {
+      sortedResults = sortedResults.sort((a, b) => a.localeCompare(b, "ko"));
+    } else if (option === "최신순") {
+      // 최신순 정렬 로직 추가 (예시)
+    } else if (option === "오래된순") {
+      // 오래된순 정렬 로직 추가 (예시)
+    }
+
+    setSearchResults(sortedResults); // Update the search results with the sorted list
+  };
+
   return (
     <View style={styles.container}>
-      {/* 검색 바 */}
-      <View style={styles.searchBar}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="국가, 도시 검색"
-          value={searchText}
-          onChangeText={handleSearch}
-          onSubmitEditing={handleSubmitSearch} // 엔터키로 검색 제출
-        />
-        <TouchableOpacity onPress={() => setSearchText("")}>
-          <Text style={styles.cancelButton}>취소</Text>
+      <Image
+        source={require("../../assets/images/Title.png")}
+        style={styles.logo}
+      />
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Image
+            source={require("../../assets/images/searchIcon.png")}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="검색"
+            value={searchText}
+            onChangeText={setSearchText}
+            onSubmitEditing={handleSubmitSearch}
+          />
+          {searchText !== "" && (
+            <TouchableOpacity
+              onPress={handleClearSearch}
+              style={styles.clearButton}
+            >
+              <Image
+                source={require("../../assets/images/clearIcon.png")}
+                style={styles.clearIcon}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity
+          onPress={() => setDropdownVisible(!dropdownVisible)}
+          style={styles.sortButton}
+        >
+          <Image
+            source={require("../../assets/images/sortIcon.png")}
+            style={styles.sortIcon}
+          />
         </TouchableOpacity>
+        {dropdownVisible && (
+          <View style={styles.dropdown}>
+            <TouchableOpacity
+              onPress={() => handleSortOptionSelect1("이름순")}
+              style={styles.dropdownItem}
+            >
+              <Text>이름순</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleSortOptionSelect1("최신순")}
+              style={styles.dropdownItem}
+            >
+              <Text>최신순</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleSortOptionSelect1("오래된순")}
+              style={styles.dropdownItem}
+            >
+              <Text>오래된순</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
-
-      {/* 검색 결과 */}
-      {searchResults.length > 0 && (
+      {searchResults.length > 0 ? (
         <FlatList
           data={searchResults}
+          renderItem={renderSearchResult}
+          keyExtractor={(item, index) => index.toString()}
+          contentContainerStyle={styles.resultsList}
+        />
+      ) : (
+        <FlatList
+          data={randomizedResults}
           renderItem={renderSearchResult}
           keyExtractor={(item, index) => index.toString()}
           contentContainerStyle={styles.resultsList}
@@ -108,28 +172,69 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     paddingHorizontal: 15,
   },
-  searchBar: {
+  logo: {
+    width: 150,
+    height: 50,
+    resizeMode: "contain",
+    marginTop: 10,
+    marginLeft: 10,
+  },
+  searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    marginBottom: 10,
-    paddingVertical: 5,
+    marginVertical: 10,
+    gap: 10,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 25,
+    paddingHorizontal: 15,
+  },
+  sortButton: {
+    padding: 10,
+    position: "relative",
+  },
+  sortIcon: {
+    width: 24,
+    height: 24,
+  },
+  dropdown: {
+    position: "absolute",
+    top: 50, // Adjust based on your layout
+    right: 0,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 5,
+    zIndex: 1,
+  },
+  dropdownItem: {
+    padding: 10,
+  },
+  searchIcon: {
+    width: 20,
+    height: 20,
+    tintColor: "#808080",
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    padding: 10,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 5,
-    marginRight: 10,
+    paddingVertical: 10,
   },
-  cancelButton: {
-    fontSize: 16,
-    color: "#007bff",
+  clearButton: {
+    padding: 5,
+  },
+  clearIcon: {
+    width: 20,
+    height: 20,
+    tintColor: "#808080",
   },
   searchResult: {
-    padding: 20, // 세로 크기를 3배로 늘림
+    padding: 20,
     backgroundColor: "#f0f0f0",
     marginVertical: 5,
     borderRadius: 5,
@@ -139,7 +244,7 @@ const styles = StyleSheet.create({
   },
   resultText: {
     fontSize: 16,
-    flex: 1, // 텍스트와 버튼을 양쪽에 배치
+    flex: 1,
   },
   favoriteButton: {
     padding: 5,

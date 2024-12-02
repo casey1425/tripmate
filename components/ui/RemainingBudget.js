@@ -85,7 +85,7 @@ export default function RemainingBudget({
             ₩ {remaining.won.toLocaleString()}{" "}
             <Text style={styles.goalText}>/ {budget.won.toLocaleString()}</Text>
           </Text>
-          <Text style={styles.currencyText}>
+          <Text style={styles.currencyExchangeText}>
             {currencyCode}: {convertedRemaining || "N/A"}{" "}
           </Text>
         </View>
@@ -126,6 +126,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
+  },
+  currencyExchangeText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "rgb(4, 177, 157)",
   },
   goalText: {
     fontSize: 14,

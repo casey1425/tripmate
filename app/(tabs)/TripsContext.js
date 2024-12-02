@@ -6,7 +6,11 @@ export const TripsProvider = ({ children }) => {
   const [trips, setTrips] = useState([]);
 
   const addTrip = (trip) => {
-    setTrips((prevTrips) => [...prevTrips, trip]);
+    const newTrip = {
+      ...trip,
+      createdAt: new Date().toISOString(), // 현재 시간 추가
+    };
+    setTrips((prevTrips) => [...prevTrips, newTrip]);
   };
   const updateTrip = (index, updatedTrip) => {
     setTrips((prevTrips) => {

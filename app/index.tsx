@@ -15,6 +15,8 @@ import ForgotPassword from "./(tabs)/ForgotPassword";
 import NotifPage from "./(tabs)/NotifPage";
 import SetupPage from "./(tabs)/SetupPage";
 import SearchPage from "./(tabs)/SearchPage";
+import { FavoritesProvider } from "./(tabs)/FavoritesContext";
+import FavsPage from "./(tabs)/FavsPage";
 import Setup2 from "./(tabs)/Setup2";
 import Setup3 from "./(tabs)/Setup3";
 import Setup4 from "./(tabs)/Setup4";
@@ -22,13 +24,7 @@ import { Text, View } from "react-native";
 // 네비게이터 생성
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
-function PlaceholderPage() {
-  return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>즐겨찾기 페이지가 아직 준비되지 않았습니다.</Text>
-    </View>
-  );
-}
+
 // **탭 네비게이터**
 function TabNavigator() {
   return (
@@ -93,7 +89,7 @@ function TabNavigator() {
       />
       <Tab.Screen
         name="Favorites"
-        component={PlaceholderPage}
+        component={FavsPage}
         options={{ title: "즐겨찾기" }}
       />
       <Tab.Screen
@@ -113,70 +109,72 @@ function TabNavigator() {
 // **스택 네비게이터**
 export default function App() {
   return (
-    <TripsProvider>
-      <Stack.Navigator
-        initialRouteName="Intro"
-        screenOptions={{
-          headerShown: false,
-          cardStyle: { backgroundColor: "#FFFFFF" },
-        }}
-      >
-        {/* 인트로 및 인증 화면 */}
-        <Stack.Screen
-          name="Intro"
-          component={IntroPage}
-          options={{ title: "IntroScreen" }}
-        />
-        <Stack.Screen
-          name="Login"
-          component={LoginPage}
-          options={{ title: "LoginScreen" }}
-        />
-        <Stack.Screen
-          name="Signup"
-          component={SignupPage}
-          options={{ title: "SignupScreen" }}
-        />
-        <Stack.Screen
-          name="Forgot"
-          component={ForgotPassword}
-          options={{ title: "ForgotPasswordScreen" }}
-        />
+    <FavoritesProvider>
+      <TripsProvider>
+        <Stack.Navigator
+          initialRouteName="Intro"
+          screenOptions={{
+            headerShown: false,
+            cardStyle: { backgroundColor: "#FFFFFF" },
+          }}
+        >
+          {/* 인트로 및 인증 화면 */}
+          <Stack.Screen
+            name="Intro"
+            component={IntroPage}
+            options={{ title: "IntroScreen" }}
+          />
+          <Stack.Screen
+            name="Login"
+            component={LoginPage}
+            options={{ title: "LoginScreen" }}
+          />
+          <Stack.Screen
+            name="Signup"
+            component={SignupPage}
+            options={{ title: "SignupScreen" }}
+          />
+          <Stack.Screen
+            name="Forgot"
+            component={ForgotPassword}
+            options={{ title: "ForgotPasswordScreen" }}
+          />
 
-        {/* 메인 화면 (탭 네비게이터 포함) */}
-        <Stack.Screen
-          name="Home"
-          component={TabNavigator} // 탭 네비게이터 포함
-          options={{ title: "Main Screens" }}
-        />
+          {/* 메인 화면 (탭 네비게이터 포함) */}
+          <Stack.Screen
+            name="Home"
+            component={TabNavigator} // 탭 네비게이터 포함
+            options={{ title: "Main Screens" }}
+          />
 
-        {/* 기타 추가 화면 */}
-        <Stack.Screen
-          name="Spending"
-          component={SpendingScreen}
-          options={{ title: "SpendingScreen" }}
-        />
-        <Stack.Screen
-          name="Planning"
-          component={PlanningScreen}
-          options={{ title: "PlanningScreen" }}
-        />
-        <Stack.Screen
-          name="Setup2"
-          component={Setup2}
-          options={{ title: "Setup2" }}
-        />
-        <Stack.Screen
-          name="Setup3"
-          component={Setup3}
-          options={{ title: "Setup3" }}
-        />
-        <Stack.Screen
-          name="Setup4"
-          component={Setup4}
-          options={{ title: "Setup4" }}
-        />
-      </Stack.Navigator>
-    </TripsProvider>
+          {/* 기타 추가 화면 */}
+          <Stack.Screen
+            name="Spending"
+            component={SpendingScreen}
+            options={{ title: "SpendingScreen" }}
+          />
+          <Stack.Screen
+            name="Planning"
+            component={PlanningScreen}
+            options={{ title: "PlanningScreen" }}
+          />
+          <Stack.Screen
+            name="Setup2"
+            component={Setup2}
+            options={{ title: "Setup2" }}
+          />
+          <Stack.Screen
+            name="Setup3"
+            component={Setup3}
+            options={{ title: "Setup3" }}
+          />
+          <Stack.Screen
+            name="Setup4"
+            component={Setup4}
+            options={{ title: "Setup4" }}
+          />
+        </Stack.Navigator>
+      </TripsProvider>
+    </FavoritesProvider>
   );
 }

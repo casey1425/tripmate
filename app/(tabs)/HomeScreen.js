@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,8 +12,28 @@ import { TripsContext } from "./TripsContext";
 import CountryFlag from "react-native-country-flag";
 export default function HomeScreen({ navigation }) {
   const { trips } = useContext(TripsContext);
-  useEffect(() => {
-    console.log("HomeScreen - trips updated:", trips);
+  const [sortOrder, setSortOrder] = useState("newest"); // 정렬 상태
+  const [sortedTrips, setSortedTrips] = useState([...trips]); // 정렬된 여행 데이터
+
+  // 정렬 함수
+  const handleSort = () => {
+    const newOrder = sortOrder === "newest" ? "oldest" : "newest";
+    setSortOrder(newOrder);
+
+    const sorted = [...sortedTrips].sort((a, b) => {
+      if (newOrder === "newest") {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      } else {
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      }
+    });
+
+    setSortedTrips(sorted);
+  };
+
+  // 여행 데이터가 변경될 때 동기화
+  React.useEffect(() => {
+    setSortedTrips([...trips]);
   }, [trips]);
   const renderTrip = ({ item, index }) => (
     <TouchableOpacity
@@ -30,7 +50,6 @@ export default function HomeScreen({ navigation }) {
       </View>
     </TouchableOpacity>
   );
-
   return (
     <View style={styles.container}>
       <View style={styles.TopContainer}>
@@ -38,16 +57,24 @@ export default function HomeScreen({ navigation }) {
           source={require("../../assets/images/tripmate-logo.png")}
           style={styles.logo}
         />
-        <Ionicons
-          name="add-outline"
-          size={40}
-          color="black"
-          style={styles.icon}
-          onPress={() => navigation.navigate("Planning")}
-        />
+        <View style={styles.iconsContainer}>
+          <Ionicons
+            name="add-outline"
+            size={40}
+            color="black"
+            style={styles.icon}
+            onPress={() => navigation.navigate("Planning")}
+          />
+          <TouchableOpacity onPress={handleSort} style={styles.icon}>
+            <Image
+              source={require("../../assets/images/sortIcon.png")}
+              style={styles.sortIcon}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
       <FlatList
-        data={trips}
+        data={sortedTrips}
         renderItem={renderTrip}
         keyExtractor={(item, index) => index.toString()}
         extraData={trips}
@@ -114,5 +141,17 @@ const styles = StyleSheet.create({
     height: 60, // 국기 높이
     marginRight: 20, // 텍스트와 국기 간격
     resizeMode: "contain",
+  },
+  sortIcon: {
+    width: 24,
+    height: 24,
+  },
+  iconsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  icon: {
+    marginRight: 15,
+    marginTop: 10,
   },
 });
