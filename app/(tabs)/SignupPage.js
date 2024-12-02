@@ -8,6 +8,7 @@ import {
   Image,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { WebView } from "react-native-webview";
 
 const SignupPage = ({ navigation }) => {
   const [name, setName] = useState("");
@@ -15,62 +16,106 @@ const SignupPage = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isAgreed, setIsAgreed] = useState(false);
+  const [showWebView, setShowWebView] = useState(false); // 웹뷰 표시 상태 관리
+
+  const CLIENT_ID = "BSDKxMEk3jWzgK4iiTk1";
+  const REDIRECT_URI = "http://localhost:8081/callback";
+  const STATE = Math.random().toString(36).substr(2);
 
   const handleSignup = () => {
     // 회원가입 처리 로직 (백엔드 연동 필요)
   };
 
+  const handleNaverLogin = () => {
+    setShowWebView(true); // WebView 표시
+  };
+
+  const onNavigationStateChange = (navState) => {
+    const { url } = navState;
+    if (url.startsWith(REDIRECT_URI)) {
+      setShowWebView(false); // WebView 숨김
+      const params = new URLSearchParams(url.split("?")[1]);
+      const code = params.get("code");
+      const state = params.get("state");
+      console.log("Auth Code:", code, "State:", state);
+
+      // 여기서 토큰 요청 로직 추가 가능
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        onPress={() => navigation.navigate("Login")}
-        style={styles.backButton}
-      >
-        <Ionicons name="arrow-back" size={24} color="black" />
-      </TouchableOpacity>
-      <Image
-        source={require("../../assets/images/Title.png")}
-        style={styles.logo}
-        resizeMode="contain"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="이름"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="이메일"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호 확인"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
-      <View style={styles.agreementContainer}>
-        <TouchableOpacity onPress={() => setIsAgreed(!isAgreed)}>
-          <Text style={styles.agreementText}>
-            {isAgreed ? "✔" : "○"} 약관동의
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity style={styles.button} onPress={handleSignup}>
-        <Text style={styles.buttonText}>회원가입</Text>
-      </TouchableOpacity>
-      <View style={styles.linkContainer}></View>
+      {showWebView ? (
+        <WebView
+          source={{
+            uri: `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(
+              REDIRECT_URI
+            )}&state=${STATE}`,
+          }}
+          onNavigationStateChange={onNavigationStateChange}
+          style={{ flex: 1 }}
+        />
+      ) : (
+        <>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Login")}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color="black" />
+          </TouchableOpacity>
+          <Image
+            source={require("../../assets/images/Title.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="이름"
+            value={name}
+            onChangeText={setName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="이메일"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="비밀번호"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="비밀번호 확인"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+          />
+          <View style={styles.agreementContainer}>
+            <TouchableOpacity onPress={() => setIsAgreed(!isAgreed)}>
+              <Text style={styles.agreementText}>
+                {isAgreed ? "✔" : "○"} 약관동의
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={styles.button} onPress={handleSignup}>
+            <Text style={styles.buttonText}>회원가입</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.naverButton} onPress={handleNaverLogin}>
+            <Image
+              source={{
+                uri: "http://static.nid.naver.com/oauth/small_g_in.PNG",
+              }}
+              style={styles.naverLogo}
+            />
+            <Text style={styles.naverButtonText}>네이버 로그인</Text>
+          </TouchableOpacity>
+        </>
+      )}
     </View>
   );
 };
@@ -120,14 +165,23 @@ const styles = StyleSheet.create({
   agreementText: {
     fontSize: 16,
   },
-  linkContainer: {
+  naverButton: {
     flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1ec800",
+    paddingVertical: 12,
+    borderRadius: 5,
     justifyContent: "center",
-    marginTop: 20,
   },
-  linkText: {
-    fontSize: 14,
-    color: "blue",
+  naverButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 10,
+  },
+  naverLogo: {
+    width: 20,
+    height: 20,
   },
 });
 

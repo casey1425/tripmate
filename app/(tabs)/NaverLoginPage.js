@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { WebView } from "react-native-webview";
 import { fetchAccessToken } from "../views/naverAuth"; // 경로는 프로젝트 구조에 따라 변경
 
@@ -23,11 +23,6 @@ const NaverLoginPage = () => {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require("../../assets/images/Title.png")} // 앱 로고 이미지 경로
-        style={styles.logo}
-        resizeMode="contain"
-      />
       {showWebView ? (
         <WebView
           source={{
@@ -53,11 +48,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#fff",
-  },
-  logo:{
-    width: "80%",
-    height: 100,
-    marginBottom: 40,
   },
   loginButton: {
     backgroundColor: "#03c75a",
