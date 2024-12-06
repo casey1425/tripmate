@@ -1,56 +1,50 @@
-import React, { useRef } from "react";
-import { View, StyleSheet, ActivityIndicator, Alert } from "react-native";
-import { WebView } from "react-native-webview";
+import React from 'react';
+import { WebView } from 'react-native-webview';
+import { View, Text } from 'react-native';
+import axios from 'axios';
 
 const NaverLoginWebView = ({ navigation }) => {
-  const webviewRef = useRef(null);
+  const CLIENT_ID = "BSDKxMEk3jWzgK4iiTk1"; // 네이버에서 발급받은 client_id
+  const REDIRECT_URI = "http://localhost:8081/callback"; // 리디렉션 URI
 
-  // 네이버 로그인 URL 설정
-  const clientId = "BSDKxMEk3jWzgK4iiTk1"; // 네이버에서 발급받은 Client ID
-  const redirectUri = "http://localhost:8081/callback"; // 네이버 개발자센터에서 등록한 Redirect URI
-  const state = "RANDOM_STATE"; // CSRF 방지용 상태값
-  const naverLoginUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
-    redirectUri
-  )}&state=${state}`;
+  // 액세스 토큰을 요청하는 함수
+  const fetchAccessToken = async (code) => {
+    const CLIENT_SECRET = "dEkL8sMqEy"; // 네이버에서 발급받은 client_secret
+    const url = `https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&code=${code}`;
+    
+    try {
+      const response = await axios.get(url);
+      console.log("Access Token Response:", response.data);
+      // 액세스 토큰 처리
+      const accessToken = response.data.access_token;
+      // 여기에 토큰을 저장하거나 다음 작업을 진행
+    } catch (error) {
+      console.error("Failed to fetch access token:", error);
+    }
+  };
 
-  // WebView Navigation State Change Handler
-  const handleNavigationStateChange = (navState) => {
-    const { url } = navState;
-
-    // Redirect URI에 인증 코드가 포함되었는지 확인
-    if (url.includes("code=")) {
-      const code = url.split("code=")[1].split("&")[0];
-      Alert.alert("Naver Login Successful", `Authorization Code: ${code}`);
-      
-      // 여기에서 백엔드로 코드 전송 로직을 추가
-      navigation.goBack(); // 로그인 성공 후 이전 화면으로 돌아감
+  const onNavigationStateChange = (event) => {
+    if (event.url.startsWith(REDIRECT_URI)) {
+      const code = event.url.split('code=')[1]; // URL에서 인증 코드 추출
+      if (code) {
+        // 인증 코드로 액세스 토큰 요청
+        fetchAccessToken(code);
+        navigation.navigate('Home');  // 로그인 후 홈 화면으로 이동
+      }
     }
   };
 
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1 }}>
       <WebView
-        ref={webviewRef}
-        source={{ uri: naverLoginUrl }}
-        onNavigationStateChange={handleNavigationStateChange}
+        source={{
+          uri: `https://nid.naver.com/oauth2.0/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`
+        }}
+        onNavigationStateChange={onNavigationStateChange}
         startInLoadingState={true}
-        renderLoading={() => (
-          <ActivityIndicator size="large" color="#00ff00" style={styles.loader} />
-        )}
       />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loader: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
 
 export default NaverLoginWebView;
