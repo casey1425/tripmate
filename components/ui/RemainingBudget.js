@@ -32,13 +32,11 @@ export default function RemainingBudget({
           `https://v6.exchangerate-api.com/v6/942d6fabefccf43330969a3b/latest/KRW`
         );
         const data = await response.json();
-        console.log("환율 데이터:", data);
 
         if (data.conversion_rates) {
           const rate = data.conversion_rates[currencyCode];
           if (rate) {
             setExchangeRate(rate);
-            console.log(`환율 (${currencyCode}):`, rate);
           } else {
             console.warn(
               `환율 정보를 찾을 수 없습니다. 통화 코드: ${currencyCode}`
@@ -62,12 +60,12 @@ export default function RemainingBudget({
 
   // 남은 예산 변환
   useEffect(() => {
-    if (exchangeRate && remaining.won) {
-      setConvertedRemaining((remaining.won * exchangeRate).toFixed(2));
+    if (exchangeRate && budget.won) {
+      setConvertedRemaining((budget.won * exchangeRate).toFixed(2));
     } else {
       setConvertedRemaining("N/A");
     }
-  }, [exchangeRate, remaining]);
+  }, [exchangeRate, budget]);
 
   return (
     <View style={styles.budgetContainer}>

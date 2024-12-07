@@ -1,32 +1,34 @@
-import React from "react";
+import React, { useContext } from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { TripsProvider } from "./(tabs)/TripsContext";
 import { Ionicons } from "@expo/vector-icons";
 
 // 스크린 컴포넌트 가져오기
+import IntroPage from "./(tabs)/IntroPage";
 import HomeScreen from "./(tabs)/HomeScreen";
 import SpendingScreen from "./(tabs)/SpendingScreen";
 import PlanningScreen from "./(tabs)/PlanningScreen";
 import LoginPage from "./(tabs)/LoginPage";
 import SignupPage from "./(tabs)/SignupPage";
-import IntroPage from "./(tabs)/IntroPage";
 import ForgotPassword from "./(tabs)/ForgotPassword";
-import NotifPage from "./(tabs)/NotifPage";
-import SetupPage from "./(tabs)/SetupPage";
 import SearchPage from "./(tabs)/SearchPage";
 import { FavoritesProvider } from "./(tabs)/FavoritesContext";
+import { TripsContext } from "./(tabs)/TripsContext";
 import FavsPage from "./(tabs)/FavsPage";
+import NotifPage from "./(tabs)/NotifPage";
+import SetupPage from "./(tabs)/SetupPage";
 import Setup2 from "./(tabs)/Setup2";
 import Setup3 from "./(tabs)/Setup3";
 import Setup4 from "./(tabs)/Setup4";
+import DetailPage from "./(tabs)/DetailPage"; // 새로 추가된 상세 페이지
 import { Text, View } from "react-native";
 // 네비게이터 생성
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
-
 // **탭 네비게이터**
 function TabNavigator() {
+  const { unread } = useContext(TripsContext); // unread 상태 가져오기
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -49,12 +51,34 @@ function TabNavigator() {
           }
 
           return (
-            <Ionicons
-              name={iconName}
-              size={30}
-              color={color}
-              style={{ marginBottom: -3 }}
-            />
+            <View style={{ position: "relative" }}>
+              <Ionicons name={iconName} size={30} color={color} />
+              {route.name === "Notifications" && unread && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -5,
+                    right: -10,
+                    backgroundColor: "red",
+                    borderRadius: 15,
+                    width: 20,
+                    height: 20,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 12,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    !
+                  </Text>
+                </View>
+              )}
+            </View>
           );
         },
         headerShown: false,
@@ -157,6 +181,11 @@ export default function App() {
             name="Planning"
             component={PlanningScreen}
             options={{ title: "PlanningScreen" }}
+          />
+          <Stack.Screen
+            name="DetailPage"
+            component={DetailPage}
+            options={{ title: "상세페이지" }}
           />
           <Stack.Screen
             name="Setup2"

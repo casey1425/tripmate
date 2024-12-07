@@ -6,41 +6,64 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
+  Modal,
 } from "react-native";
 import { useFavorites } from "./FavoritesContext";
 
 export default function FavsPage() {
   const { favorites, toggleFavorite } = useFavorites();
-  const [sortOption, setSortOption] = useState();
+  const [sortOption, setSortOption] = useState("최신순");
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
   const handleSortOptionSelect2 = (option) => {
     setSortOption(option);
     setDropdownVisible(false);
+  };
 
-    // let sortedFavorites = [...favoriteItem];
+  const sortedFavorites = () => {
+    if (!sortOption) return favorites; // 정렬 옵션이 없으면 원래 favorites 반환
+
+    const sortedArray = [...favorites]; // 원본 배열을 복사
 
     if (sortOption === "이름순") {
-      // sortedFavorites = sortedFavorites.sort((a, b) => a.localeCompare(b, "ko"));
+      sortedArray.sort((a, b) =>
+        (a.name || a).localeCompare(b.name || b, "ko")
+      ); // 이름순 정렬
     } else if (sortOption === "최신순") {
-      // 최신순 정렬 로직 추가 (예시: 날짜순으로 정렬)
-      // 예시로는 각 즐겨찾기가 날짜 속성을 가지고 있다고 가정
-      // sortedFavorites = sortedFavorites.sort((a, b) => b.date - a.date); // 가정: 'date' 속성이 숫자 타입
+      sortedArray.sort((a, b) => new Date(b.date) - new Date(a.date)); // 최신순 정렬
     } else if (sortOption === "오래된순") {
-      // 오래된순 정렬 로직 추가 (예시: 날짜순으로 반대로 정렬)
-      // sortedFavorites = sortedFavorites.sort((a, b) => a.date - b.date);
+      sortedArray.sort((a, b) => new Date(a.date) - new Date(b.date)); // 오래된순 정렬
     }
+
+    return sortedArray;
   };
 
   const renderFavoriteItem = ({ item }) => (
-    <View style={styles.favoriteItem}>
-      <Text style={styles.itemText}>{item}</Text>
-      <TouchableOpacity onPress={() => toggleFavorite(item.name)}>
-        <Image
-          source={require("../../assets/images/filledstar.png")}
-          style={styles.favoriteIcon}
-        />
-      </TouchableOpacity>
-    </View>
+    <TouchableOpacity
+      style={styles.searchResult}
+      onPress={() => {
+        setSelectedItem(item);
+        setModalVisible(true);
+      }}
+    >
+      <View style={styles.favoriteItem}>
+        <Text style={styles.itemText}>
+          {typeof item === "string" ? item : item.name}
+        </Text>
+        <TouchableOpacity
+          onPress={() =>
+            toggleFavorite(typeof item === "string" ? item : item.name)
+          }
+        >
+          <Image
+            source={require("../../assets/images/filledstar.png")}
+            style={styles.favoriteIcon}
+          />
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -80,14 +103,41 @@ export default function FavsPage() {
         )}
       </View>
       <FlatList
-        data={favorites} // 사용자가 선택한 정렬 옵션에 따른 즐겨찾기 목록
+        data={sortedFavorites()} // 정렬된 즐겨찾기 목록
         renderItem={renderFavoriteItem}
         keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={styles.list}
       />
+
+      {/* 모달 컴포넌트 */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {selectedItem && (
+              <>
+                <Text style={styles.modalTitle}>{selectedItem.name}</Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>닫기</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -147,5 +197,36 @@ const styles = StyleSheet.create({
   favoriteIcon: {
     width: 20,
     height: 20,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalDate: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  closeButton: {
+    padding: 10,
+    backgroundColor: "#007BFF",
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
   },
 });

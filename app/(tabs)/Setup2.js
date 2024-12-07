@@ -33,7 +33,7 @@ const Setup2 = ({ navigation }) => {
         <Ionicons name="arrow-back" size={24} color="black" />
       </TouchableOpacity>
 
-      <Text style={styles.headerText}>아이디 조회/암호 재설정</Text>
+      <Text style={styles.headerText}>아이디 조회 / 비밀번호 재설정</Text>
 
       <TextInput
         style={styles.input}
@@ -73,7 +73,7 @@ const Setup2 = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     padding: 20,
     backgroundColor: "#fff",
   },

@@ -1,32 +1,99 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Switch,
+  Animated,
+  Alert,
+  Image,
+} from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 const SetupPage = ({ navigation }) => {
   const [isAccountPublic, setIsAccountPublic] = useState(false);
   const [isPushEnabled, setIsPushEnabled] = useState(false);
+  const [message, setMessage] = useState("");
+  const [fadeAnim] = useState(new Animated.Value(0)); // 초기값 0
 
-  const handleAccountToggle = () =>
-    setIsAccountPublic((previousState) => !previousState);
-  const handlePushToggle = () =>
-    setIsPushEnabled((previousState) => !previousState);
+  const handleAccountToggle1 = () => {
+    const newState = !isAccountPublic;
+    setIsAccountPublic(newState);
+    setMessage(
+      newState
+        ? "계정이 공개 전환 되었습니다."
+        : "계정이 비공개 전환 되었습니다."
+    );
+    showMessage();
+  };
+
+  const handlePushToggle = () => {
+    const newState = !isPushEnabled;
+    setIsPushEnabled(newState);
+    setMessage(
+      newState
+        ? "앱 알림이 활성화 되었습니다."
+        : "앱 알림이 비활성화 되었습니다."
+    );
+    showMessage();
+  };
+
+  const showMessage = () => {
+    fadeAnim.setValue(0); // 애니메이션 초기화
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      // 메시지가 나타난 후 2초 후에 사라지도록 설정
+      setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
+      }, 2000);
+    });
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      "로그아웃",
+      "정말 로그아웃 하시겠습니까?",
+      [
+        {
+          text: "확인",
+          onPress: () => navigation.navigate("Login"),
+        },
+        {
+          text: "취소",
+          style: "cancel",
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <View style={styles.container}>
-      {/* 상단 중앙의 환경설정 */}
       <Text style={styles.headerText}>환경설정</Text>
 
-      {/* 프로필 이미지와 이름 */}
       <View style={styles.profileContainer}>
-        <Text style={styles.profileName}>이름</Text>
-        <Text style={styles.profileDesc}>소개</Text>
+        <Image
+          source={require("../../assets/images/profile.png")}
+          style={styles.profileImage}
+        />
+        <Text style={styles.profileName}>사용자1</Text>
       </View>
 
-      {/* 설정 항목 리스트 */}
       <View style={styles.settingsContainer}>
         <View style={styles.settingItem}>
           <Text style={styles.settingText}>내 계정 공개</Text>
-          <Switch value={isAccountPublic} onValueChange={handleAccountToggle} />
+          <Switch
+            value={isAccountPublic}
+            onValueChange={handleAccountToggle1}
+          />
         </View>
 
         <View style={styles.settingItem}>
@@ -38,8 +105,7 @@ const SetupPage = ({ navigation }) => {
           style={styles.settingItem}
           onPress={() => navigation.navigate("Setup2")}
         >
-          {" "}
-          <Text style={styles.settingText}>아이디조회/암호설정</Text>
+          <Text style={styles.settingText}>아이디조회/비밀번호</Text>
           <Ionicons name="chevron-forward" size={24} color="black" />
         </TouchableOpacity>
 
@@ -47,7 +113,6 @@ const SetupPage = ({ navigation }) => {
           style={styles.settingItem}
           onPress={() => navigation.navigate("Setup3")}
         >
-          {" "}
           <Text style={styles.settingText}>상세 알림 설정</Text>
           <Ionicons name="chevron-forward" size={24} color="black" />
         </TouchableOpacity>
@@ -56,7 +121,6 @@ const SetupPage = ({ navigation }) => {
           style={styles.settingItem}
           onPress={() => navigation.navigate("Setup4")}
         >
-          {" "}
           <Text style={styles.settingText}>공지사항</Text>
           <Ionicons name="chevron-forward" size={24} color="black" />
         </TouchableOpacity>
@@ -66,13 +130,15 @@ const SetupPage = ({ navigation }) => {
           <Text style={styles.settingText}>1.0.0</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.settingItem}
-          onPress={() => navigation.navigate("Login")}
-        >
+        <TouchableOpacity style={styles.settingItem} onPress={handleLogout}>
           <Text style={styles.settingText}>로그아웃</Text>
         </TouchableOpacity>
       </View>
+
+      {/* 메시지 팝업 */}
+      <Animated.View style={[styles.messageContainer, { opacity: fadeAnim }]}>
+        <Text style={styles.messageText}>{message}</Text>
+      </Animated.View>
     </View>
   );
 };
@@ -83,11 +149,6 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#fff",
   },
-  backButton: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-  },
   headerText: {
     fontSize: 18,
     fontWeight: "bold",
@@ -95,18 +156,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   profileContainer: {
-    alignItems: "flex-start",
-    marginLeft: 10,
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
+  },
+  profileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
   },
   profileName: {
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 5,
-  },
-  profileDesc: {
-    fontSize: 14,
-    color: "#666",
   },
   settingsContainer: {
     marginTop: 20,
@@ -122,6 +185,20 @@ const styles = StyleSheet.create({
   settingText: {
     fontSize: 16,
     color: "black",
+  },
+  messageContainer: {
+    position: "absolute",
+    bottom: 50,
+    left: 20,
+    right: 20,
+    backgroundColor: "#333",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  messageText: {
+    color: "#fff",
+    fontSize: 16,
   },
 });
 

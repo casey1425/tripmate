@@ -15,7 +15,7 @@ const Setup4 = ({ navigation }) => {
       id: "4",
       title: "새로운 앱 업데이트가 있습니다",
       date: "2024-11-25",
-      content: "여기에 자세한 정보가 들어갑니다.",
+      content: "~ 상세 업데이트 내용 ~",
     },
     {
       id: "3",

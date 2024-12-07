@@ -7,81 +7,96 @@ import {
   FlatList,
   StyleSheet,
   Image,
+  Modal,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { useFavorites } from "./FavoritesContext";
 
 export default function SearchPage({ navigation }) {
   const [searchText, setSearchText] = useState("");
-  const [searchResults, setSearchResults] = useState([]); // add setSearchResults here
+  const [searchResults, setSearchResults] = useState([]);
   const { favorites, toggleFavorite } = useFavorites();
   const [randomizedResults, setRandomizedResults] = useState([]);
-  const [sortOption, setSortOption] = useState("이름순");
+  const [sortOption, setSortOption] = useState("최신순"); // 기본 정렬 옵션을 최신순으로 설정
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const simulatedResults = [
-    "일본1",
-    "일본2",
-    "일본3",
-    "프랑스1",
-    "프랑스2",
-    "미국1",
-    "스페인1",
-    "스페인2",
-    "스페인3",
-    "스페인4",
+    { name: "일본1", date: "2022-05-09" },
+    { name: "일본2", date: "2023-01-15" },
+    { name: "일본3", date: "2024-03-20" },
+    { name: "프랑스1", date: "2022-11-30" },
+    { name: "프랑스2", date: "2023-06-25" },
+    { name: "미국1", date: "2024-12-09" },
+    { name: "스페인1", date: "2022-08-14" },
+    { name: "스페인2", date: "2023-09-10" },
+    { name: "스페인3", date: "2024-02-05" },
+    { name: "스페인4", date: "2023-12-01" },
   ];
 
   useEffect(() => {
-    setRandomizedResults(simulatedResults.sort(() => Math.random() - 0.5));
+    // 초기 로드 시 최신순으로 정렬된 결과를 설정
+    const sortedResults = [...simulatedResults].sort(
+      (a, b) => new Date(b.date) - new Date(a.date)
+    );
+    setRandomizedResults(sortedResults);
   }, []);
 
   const handleSubmitSearch = () => {
     if (searchText.trim() !== "") {
-      setSearchResults(
-        simulatedResults.filter((result) => result.includes(searchText))
+      const results = simulatedResults.filter((result) =>
+        result.name.includes(searchText)
       );
+      setSearchResults(results);
     }
   };
 
   const handleClearSearch = () => {
     setSearchText("");
-    setSearchResults([]); // Reset search results on clear
+    setSearchResults([]);
+  };
+
+  const sortedResults = (results) => {
+    if (sortOption === "이름순") {
+      return results.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+    } else if (sortOption === "최신순") {
+      return results.sort((a, b) => new Date(b.date) - new Date(a.date));
+    } else if (sortOption === "오래된순") {
+      return results.sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+    return results;
   };
 
   const renderSearchResult = ({ item }) => (
-    <View style={styles.searchResult}>
-      <Text style={styles.resultText}>{item}</Text>
+    <TouchableOpacity
+      style={styles.searchResult}
+      onPress={() => {
+        setSelectedItem(item);
+        setModalVisible(true);
+      }}
+    >
+      <Text style={styles.resultText}>{item.name}</Text>
+      <Text style={styles.dateText}>{item.date}</Text>
       <TouchableOpacity
         style={styles.favoriteButton}
-        onPress={() => toggleFavorite(item)} // Use toggleFavorite from context
+        onPress={() => toggleFavorite(item.name)}
       >
         <Image
           source={
-            favorites.includes(item)
+            favorites.includes(item.name)
               ? require("../../assets/images/filledstar.png")
               : require("../../assets/images/star.png")
           }
           style={styles.favoriteIcon}
         />
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 
   const handleSortOptionSelect1 = (option) => {
     setSortOption(option);
     setDropdownVisible(false);
-
-    let sortedResults = [...searchResults];
-
-    if (option === "이름순") {
-      sortedResults = sortedResults.sort((a, b) => a.localeCompare(b, "ko"));
-    } else if (option === "최신순") {
-      // 최신순 정렬 로직 추가 (예시)
-    } else if (option === "오래된순") {
-      // 오래된순 정렬 로직 추가 (예시)
-    }
-
-    setSearchResults(sortedResults); // Update the search results with the sorted list
   };
 
   return (
@@ -147,21 +162,43 @@ export default function SearchPage({ navigation }) {
           </View>
         )}
       </View>
-      {searchResults.length > 0 ? (
-        <FlatList
-          data={searchResults}
-          renderItem={renderSearchResult}
-          keyExtractor={(item, index) => index.toString()}
-          contentContainerStyle={styles.resultsList}
-        />
-      ) : (
-        <FlatList
-          data={randomizedResults}
-          renderItem={renderSearchResult}
-          keyExtractor={(item, index) => index.toString()}
-          contentContainerStyle={styles.resultsList}
-        />
-      )}
+      <FlatList
+        data={sortedResults(
+          searchResults.length > 0 ? searchResults : randomizedResults
+        )} // 검색 결과 또는 초기 결과를 정렬하여 표시
+        renderItem={renderSearchResult}
+        keyExtractor={(item, index) => index.toString()}
+        contentContainerStyle={styles.resultsList}
+      />
+
+      {/* 모달 컴포넌트 */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {selectedItem && (
+              <>
+                <Text style={styles.modalTitle}>{selectedItem.name}</Text>
+                <Text style={styles.modalDate}>
+                  등록일: {selectedItem.date}
+                </Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>닫기</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -246,6 +283,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
   },
+  dateText: {
+    fontSize: 14,
+    color: "#808080",
+    marginRight: 10,
+  },
   favoriteButton: {
     padding: 5,
   },
@@ -255,5 +297,36 @@ const styles = StyleSheet.create({
   },
   resultsList: {
     marginTop: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalDate: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  closeButton: {
+    padding: 10,
+    backgroundColor: "#007BFF",
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
   },
 });

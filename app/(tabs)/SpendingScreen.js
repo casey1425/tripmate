@@ -1,5 +1,11 @@
 import React, { useContext } from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TripsContext } from "./TripsContext";
 import TabViewComponent from "../../components/ui/TabViewComponent";
@@ -10,15 +16,20 @@ export default function SpendingScreen({ route, navigation }) {
   const trip = trips[tripIndex]; // 현재 여행 정보
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.arrowIcon}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="arrow-back-outline" size={24} color="black" />
-      </TouchableOpacity>
-      <TabViewComponent tripIndex={tripIndex} trip={trip} />
-    </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <View style={styles.container}>
+        <TouchableOpacity
+          style={styles.arrowIcon}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back-outline" size={24} color="black" />
+        </TouchableOpacity>
+        <TabViewComponent tripIndex={tripIndex} trip={trip} />
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
