@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-} from "react-native";
+import {View,Text,TextInput,TouchableOpacity,StyleSheet,Alert} from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 const Setup2 = ({ navigation }) => {
@@ -33,7 +26,7 @@ const Setup2 = ({ navigation }) => {
         <Ionicons name="arrow-back" size={24} color="black" />
       </TouchableOpacity>
 
-      <Text style={styles.headerText}>아이디 조회/암호 재설정</Text>
+      <Text style={styles.headerText}>아이디 조회 / 비밀번호 재설정</Text>
 
       <TextInput
         style={styles.input}
@@ -73,7 +66,7 @@ const Setup2 = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     padding: 20,
     backgroundColor: "#fff",
   },
@@ -111,5 +104,6 @@ const styles = StyleSheet.create({
     color: "blue",
   },
 });
+
 
 export default Setup2;

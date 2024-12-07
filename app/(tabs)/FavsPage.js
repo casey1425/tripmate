@@ -92,7 +92,6 @@ export default function FavsPage() {
             {selectedItem && (
               <>
                 <Text style={styles.modalTitle}>{selectedItem.name}</Text>
-                <Text style={styles.modalDate}>등록일: {selectedItem.date}</Text>
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setModalVisible(false)}
@@ -189,5 +188,14 @@ const styles = StyleSheet.create({
   modalDate: {
     fontSize: 16,
     marginBottom: 20,
+  },
+  closeButton: {
+    padding: 10,
+    backgroundColor: "#007BFF",
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
   },
 });
